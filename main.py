@@ -3,7 +3,7 @@ import os, re, time, difflib, shutil, requests
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers.polling import PollingObserver
 
-webhook_url = "enter discord webhook url here"
+webhook_url = "enter your discord webhook url here"
 target_dir = "./logs/"
 target_file = "latest.log"
 

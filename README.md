@@ -1,4 +1,18 @@
 # Send-Minecraft-notifications
-You can be notified on Discord of user information logged into Minecraft.
+## これは何？
+Minecraftのサーバーのログの差分を取得し、それを元にWebHookリクエストを送信することでDiscordに通知を送ります。
 
-Because it uses the webhook mechanism, it can be used for services other than discord by changing the parameters.
+### こんな事ができます
+
+### これは無理です
+Discordのチャットを読み取る
+
+## What is this?
+You can get a notification using WebHook everytime the server log file is changed.
+
+## 使い方
+.batファイルを作り、
+```bat
+python ./Send-Minecraft-notifications/main.py
+```
+と入力すればOKです。
