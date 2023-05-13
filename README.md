@@ -93,19 +93,86 @@ python ./Send-Minecraft-notifications/main.py
 
 ## 注意点
 - DiscordのWebhookを使用する場合、Discord側のチャットを読み出すことは**DiscordのWebhookの仕様上不可能**です。対話型にしたい場合はBOTの作成と運用が必要です（このスクリプトは部分的に利用できるかもしれませんが、基本的に使用不可と思ってください。）。
-- このスクリプトはlatest.logの内容を元にlatest.log.prevを高速で生成し、書き換えを行います。HDDなど読み書き速度の遅い記憶媒体を使用していると悪影響があるかもしれません。
-- このスクリプトはlatest.logと同じディレクトリにlatest.log.prevを自動的に作成しますが、以下のことはしないでください。
+- このスクリプトは`latest.log`の内容を元に`latest.log.prev`を高速で生成し、書き換えを行います。HDDなど読み書き速度の遅い記憶媒体を使用していると悪影響があるかもしれません。
+- このスクリプトは`latest.log`と同じディレクトリに`latest.log.prev`を自動的に作成しますが、以下のことはしないでください。
   - スクリプトおよびサーバー動作中の削除（いずれかを完全に停止させたあとなら改変しても大丈夫です）
-  - latest.logまたはlatest.log.prevの文字コード変更（挙動が崩壊します！絶対にやらないでください。やってしまった場合はlatest.log.prevをまるごと削除してください。削除するまで正常に動作しなくなります。）
+  - `latest.log`または`latest.log.prev`の文字コード変更（挙動が崩壊します！絶対にやらないでください。やってしまった場合は`latest.log.prev`をまるごと削除してください。削除するまで正常に動作しなくなります。）
 
 ## バグを見つけたら
 [このリポジトリのIssue](https://github.com/AoSankaku/Send-Minecraft-notifications/issues)を開いてください。開き方がわからない人はググってください。
 
 Pythonのエラーコードが出ている場合、可能であればそのエラーコードを個人情報に気をつけて貼り付けるようにしてください。
 
+***
+
 # Send-Minecraft-notifications (Instructions in English)
 
-## What is this?
+## About
 You can get a notification in your discord server using WebHook everytime the server log file is changed.
-This creates a notification on starting/shutting down your server, someone logging in or out, or every event on your log file.
+This creates a notification when your server starts/shuts down, when someone logs in or out, or for any event in your log file.
 
+## Usage
+
+### Preparation
+You'll need all there followings:
+#### Python 3
+Since this script is written in Python, you will need an appropriate version of Python.
+
+Just install from Microsoft Store, or the official website.
+
+#### Git
+If you visit github.com often, it is better choice to [install git]((https://git-scm.com)).
+
+You can use Git to download our files easily.
+
+### Installation
+#### 1-A. If you're using Git
+Press the Windows and R keys to open an execution window, then enter:
+```bat
+cd <Enter your minecraft server directory here>
+```
+Your input will be look like this:
+```bat
+cd C:\path\to\your\minecraft\server\folder
+```
+
+and next, execute:
+```bat
+git clone https://github.com/AoSankaku/Send-Minecraft-notifications.git
+```
+
+After doing this, confirm that "Send-Minecraft-notifications" folder exists in your server folder.
+
+#### 1-B. If you're not using Git
+1. Create a folder named "Send-Minecraft-notifications"
+2. [Open main.py in our repository](https://github.com/AoSankaku/Send-Minecraft-notifications/blob/main/main.py) then download it manually, or create a file named "main.py" in "Send-Minecraft-notifications" and copy the code and paste it to your file, then save.
+3. Put main.py in "Send-Minecraft-notifications"
+
+#### 2. Prepare your .bat file
+##### Start this script when you start the server
+Above your existing line which launches your minecraft server, add:
+```bat
+start python ./Send-Minecraft-notifications/main.py
+```
+
+##### Start this script manually
+Create a .bat file and then paste:
+```bat
+python ./Send-Minecraft-notifications/main.py
+```
+Start this script before launching server to get notified when the server is open.
+
+##### Stopping script
+Just close the black window.
+
+## Warning
+- This script **CAN'T PULL MESSAGES ON DISCORD**. If you wish to do this, you have to create and run a discord bot.
+- This script generates `latest.log.prev` every time the log file is changed. Slow storage such as HDD may affect your computer's performance.
+- This script generates `latest.log.prev` based on `latest.log`. Please DON'T do them:
+  - Deleting `latest.log.prev` when the script is running (After stopping this script, you can delete this)
+  - Changing the encoding method of `latest.log.prev` (Be careful if you are using any language other than English)
+
+## I found a bug!
+[Open an issue on this repository](https://github.com/AoSankaku/Send-Minecraft-notifications/issues). If you do not know how to open an issue, please Google it.
+
+If you are encountering an issue with a Python error code, include the information in your issue.
