@@ -170,7 +170,7 @@ Just close the black window.
 - This script generates `latest.log.prev` every time the log file is changed. Slow storage such as HDD may affect your computer's performance.
 - This script generates `latest.log.prev` based on `latest.log`. Please DON'T do them:
   - Deleting `latest.log.prev` when the script is running (After stopping this script, you can delete this)
-  - Changing the encoding method of `latest.log.prev` (Be careful if you are using any language other than English)
+  - Changing the encoding method of `latest.log.prev` (Be especially careful if you are using any language other than English)
 
 ## I found a bug!
 [Open an issue on this repository](https://github.com/AoSankaku/Send-Minecraft-notifications/issues). If you do not know how to open an issue, please Google it.
