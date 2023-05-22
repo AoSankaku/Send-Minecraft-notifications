@@ -193,6 +193,7 @@ Just close the black window.
 ## Warning
 - This script **CAN'T PULL MESSAGES ON DISCORD**. If you wish to do this, you have to create and run a discord bot.
 
+
 ## I found a bug!
 [Open an issue on this repository](https://github.com/AoSankaku/Send-Minecraft-notifications/issues). If you do not know how to open an issue, please Google it.
 
