@@ -1,6 +1,24 @@
 # Send-Minecraft-notifications（日本語説明）
 これは他プロジェクトのフォークです。
 
+## 更新履歴
+### 2023/05/22
+- このスクリプトはlatest.log.prevファイルを生成しなくなりました。もしもlatest.log.prevファイルがまだ残っている場合は削除してください。
+- サーバーが閉じたことを検知したときに自動でスクリプトが終了するようになりました。
+- sayコマンドのメッセージも送信できるようになりました。
+  - プラグイン名を自動で取得し、一致する場合に弾いています。これが原因で、例えば「floodgate」というプラグインを入れている場合に「floodgate」というユーザーがsayコマンドを使って何かしらの発言をした場合、そちらは弾いてしまいます（通常のチャットは問題ありません）。
+- コードの最適化を行いました（関数の削除、グローバル変数の使用、ライブラリの削減など）。
+
+### オリジナルからの変更点
+このリポジトリのmain.pyはオリジナルのものに対して中規模の修正をしています。
+- 「最後のログを取得してログを作る」というコードになっていたため、一瞬で2～3行更新されたときなどに正常に動かなくなるバグを構造変更により修正しました。具体的には「現在のログと前回取得時のログの差分を比較する」という方式を採用しました。
+- 英語の補足を複数付け足しました。
+- デフォルトで「サーバーの起動/閉鎖」「サーバープレイヤーのチャット」を流すようにしました。おそらくGeyserMCのPrefixなどがついていても正常に動作するはずです。
+- チャットでシステムログの偽装ができなくなるように、正規表現を改変しました。例えば、誰かがいたずらでチャットに「tesutodesuyo:Darekasan left the game.」と入力してもログアウトとして扱わなくなりました。
+- Discordの絵文字に対応しました。
+- いくつかのスペルミスと変数命名規則を修正しました。
+- README.mdを大幅に書き換えました。
+
 ## これは何？
 Minecraftのサーバーで、
 
@@ -14,16 +32,6 @@ Minecraftのサーバーのログの差分を取得し、それを元にWebHook�
 例えばサーバーの起動と閉鎖、誰かがログイン/ログアウトした情報などのほか、ログを直接参照しているため、ログに書いてあることはすべて扱うことができます。
 
 オリジナルの作者はLinuxの動作を確認しています。私はWindowsでも正常に動くようにプロジェクトを改変しましたが、オリジナルのものでもエラーなく動作します。
-
-## 変更点
-このリポジトリのmain.pyはオリジナルのものに対して中規模の修正をしています。
-- 「最後のログを取得してログを作る」というコードになっていたため、一瞬で2～3行更新されたときなどに正常に動かなくなるバグを構造変更により修正しました。具体的には「現在のログと前回取得時のログの差分を比較する」という方式を採用しました。そのため、このスクリプトはログが入るフォルダに新しくファイルを自動的に生成します。
-- 英語の補足を複数付け足しました。
-- デフォルトで「サーバーの起動/閉鎖」「サーバープレイヤーのチャット」を流すようにしました。おそらくGeyserMCのPrefixなどがついていても正常に動作するはずです。
-- チャットでシステムログの偽装ができなくなるように、正規表現を改変しました。例えば、誰かがいたずらでチャットに「tesutodesuyo:Darekasan left the game.」と入力してもログアウトとして扱わなくなりました。
-- Discordの絵文字に対応しました。
-- いくつかのスペルミスと変数命名規則を修正しました。
-- README.mdを大幅に書き換えました。
 
 ## 使い方
 ### 事前準備
@@ -42,7 +50,7 @@ Microsoft Storeからも入ると思いますので適当に最新版をイン�
 pip install watchdog
 ```
 
-と入力してください。実行場所はどこでも構いません。
+と入力してください。実行場所はどこでも構いません（前もってcd=ディレクトリ変更 する必要はありません）。
 
 以下はオプションです。
 
@@ -93,10 +101,7 @@ python ./Send-Minecraft-notifications/main.py
 
 ## 注意点
 - DiscordのWebhookを使用する場合、Discord側のチャットを読み出すことは**DiscordのWebhookの仕様上不可能**です。対話型にしたい場合はBOTの作成と運用が必要です（このスクリプトは部分的に利用できるかもしれませんが、基本的に使用不可と思ってください。）。
-- このスクリプトは`latest.log`の内容を元に`latest.log.prev`を高速で生成し、書き換えを行います。HDDなど読み書き速度の遅い記憶媒体を使用していると悪影響があるかもしれません。
-- このスクリプトは`latest.log`と同じディレクトリに`latest.log.prev`を自動的に作成しますが、以下のことはしないでください。
-  - スクリプトおよびサーバー動作中の削除（いずれかを完全に停止させたあとなら改変しても大丈夫です）
-  - `latest.log`または`latest.log.prev`の文字コード変更（挙動が崩壊します！絶対にやらないでください。やってしまった場合は`latest.log.prev`をまるごと削除してください。削除するまで正常に動作しなくなります。）
+- プレイヤーが`say`コマンドを使用した場合、そのメッセージは補足できません（ログを正しく選別できないためです）。
 
 ## バグを見つけたら
 [このリポジトリのIssue](https://github.com/AoSankaku/Send-Minecraft-notifications/issues)を開いてください。開き方がわからない人はググってください。
@@ -107,9 +112,19 @@ Pythonのエラーコードが出ている場合、可能であればそのエ�
 
 # Send-Minecraft-notifications (Instructions in English)
 
+## Changelog
+### 2023/05/22
+- This script no longer generates `latest.log.prev`. If you have a file named `latest.log.prev`, you can delete it.
+- This script can now be automatically stopped when the server is closed.
+- This script now can fetch messages sent by `say` command.
+  - This script now filters usernames using folder names in your plugin folder. This means if you're using "floodgate" plugin and a user "floodgate" joins and uses `say` command, the message will not be sent to your discord server. (This filter dosen't apply to ordinary messages.)
+- Some codes have been optimized.
+
 ## About
 You can get a notification in your discord server using WebHook everytime the server log file is changed.
 This creates a notification when your server starts/shuts down, when someone logs in or out, or for any event in your log file.
+
+This script is originally made for Linux, but I confirmed this running on Windows.
 
 ## Usage
 
@@ -120,7 +135,17 @@ Since this script is written in Python, you will need an appropriate version of 
 
 Just install from Microsoft Store, or the official website.
 
-#### Git
+#### Watchdog (Python Library)
+Open command prompt or windows power shell. To open command prompt, press Windows and R keys, then type `cmd` and press Enter.
+
+Then execute:
+```bat
+pip install watchdog
+```
+
+It doesn't matter where you execute this (this means you don't have to cd ―change directory― beforehand).
+
+#### Git (Optional)
 If you visit github.com often, it is better choice to [install git]((https://git-scm.com)).
 
 You can use Git to download our files easily.
@@ -167,10 +192,6 @@ Just close the black window.
 
 ## Warning
 - This script **CAN'T PULL MESSAGES ON DISCORD**. If you wish to do this, you have to create and run a discord bot.
-- This script generates `latest.log.prev` every time the log file is changed. Slow storage such as HDD may affect your computer's performance.
-- This script generates `latest.log.prev` based on `latest.log`. Please DON'T do them:
-  - Deleting `latest.log.prev` when the script is running (After stopping this script, you can delete this)
-  - Changing the encoding method of `latest.log.prev` (Be careful if you are using any language other than English)
 
 ## I found a bug!
 [Open an issue on this repository](https://github.com/AoSankaku/Send-Minecraft-notifications/issues). If you do not know how to open an issue, please Google it.
