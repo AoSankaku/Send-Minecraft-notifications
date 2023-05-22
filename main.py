@@ -15,6 +15,11 @@ def SendMessage(message: str) -> None:
     main_content = {"content": message}
     requests.post(webhook_url, main_content)
 
+    # サーバー閉鎖を感知したら停止
+    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: Closing Server", message)
+    if len(match) == 1:
+        exit()
+
 def MessageCreation(text: str):
     print(text)
     # 参加メッセージ

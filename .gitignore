@@ -1,5 +1,5 @@
 package.json
-package-lock.js
+package-lock.json
 node_modules
 test.py
 .env
