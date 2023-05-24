@@ -101,7 +101,6 @@ python ./Send-Minecraft-notifications/main.py
 
 ## 注意点
 - DiscordのWebhookを使用する場合、Discord側のチャットを読み出すことは**DiscordのWebhookの仕様上不可能**です。対話型にしたい場合はBOTの作成と運用が必要です（このスクリプトは部分的に利用できるかもしれませんが、基本的に使用不可と思ってください。）。
-- プレイヤーが`say`コマンドを使用した場合、そのメッセージは補足できません（ログを正しく選別できないためです）。
 
 ## バグを見つけたら
 [このリポジトリのIssue](https://github.com/AoSankaku/Send-Minecraft-notifications/issues)を開いてください。開き方がわからない人はググってください。
