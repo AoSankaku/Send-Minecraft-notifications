@@ -2,6 +2,13 @@
 これは他プロジェクトのフォークです。
 
 ## 更新履歴
+### 2023/05/30
+- 現在のプレイヤー数を通知できるようになりました。チャットが決まった回数を超えると自動送信します。
+- プレイヤー名としてみなさない名前の規則において、大文字と小文字、バージョン名を無視するようになりました。
+- LunaChatに対応しました。
+- プレイヤーが入ろうとしたがホワイトリストに入っていないとき、進捗達成時、挑戦達成時に通知が来るようになりました。
+- スクリプト起動中に日付をまたぐと、日付をまたいだ直後のメッセージがいくつか送信されなくなる不具合を修正しました。（完全ではありません）
+
 ### 2023/05/22
 - このスクリプトはlatest.log.prevファイルを生成しなくなりました。もしもlatest.log.prevファイルがまだ残っている場合は削除してください。
 - サーバーが閉じたことを検知したときに自動でスクリプトが終了するようになりました。
@@ -112,6 +119,13 @@ Pythonのエラーコードが出ている場合、可能であればそのエ�
 # Send-Minecraft-notifications (Instructions in English)
 
 ## Changelog
+### 2023/05/29
+- This script can now send a message about the current number of pleyers in your server. After a specified number of message have been sent, this script will automatically send a message.
+- This script now ignores capitalization and versions when fetching file names in your plugin folder.
+- This script can now fetch messages modified by the LunaChat plugin. You may not need this feature if someone in your server uses Japanese.
+- If someone who is not on the whitelist attempts to join your server, this script will now send a notification.
+- A bug has been fixed that prevented some messages from being sent to your Discord server if the date changes while this script is running (but this is not a complete fix).
+
 ### 2023/05/22
 - This script no longer generates `latest.log.prev`. If you have a file named `latest.log.prev`, you can delete it.
 - This script can now be automatically stopped when the server is closed.
