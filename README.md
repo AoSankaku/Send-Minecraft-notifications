@@ -1,7 +1,13 @@
 # Send-Minecraft-notifications（日本語説明）
-これは他プロジェクトのフォークです。
+これは他プロジェクトのフォークです。  
+Vanilla、Forge、Fabric、Paper、Spigotなどログを出力するすべてのサーバーで使用可能な、独立したPythonスクリプトです。
 
 ## 更新履歴
+### 2023/08/22
+- 各種変数を`.env`ファイルに移行しました。これにより、ソースコードを変更しなくても半分以上の部分で設定が可能になりました。
+- Tipsメッセージを流すことができるようになりました。
+- サーバーから特定のメッセージを送信することで、再起動を検知することができるようになりました。
+
 ### 2023/05/30
 - 現在のプレイヤー数を通知できるようになりました。チャットが決まった回数を超えると自動送信します。
 - プレイヤー名としてみなさない名前の規則において、大文字と小文字、バージョン名を無視するようになりました。
@@ -58,6 +64,12 @@ pip install watchdog
 ```
 
 と入力してください。実行場所はどこでも構いません（前もってcd=ディレクトリ変更 する必要はありません）。
+
+> [!IMPORTANT]
+> お使いの環境に応じて、他にもpythonライブラリのインストールが必要なことがあります。各自インストールしてください。
+
+#### .env.exampleのリネーム
+`.env.example`を`.env`にリネームする必要があります。Linuxを使っている人はこのファイルが有るところまでcdして、`mv .env.example .env`を実行してください。
 
 以下はオプションです。
 
@@ -117,8 +129,14 @@ Pythonのエラーコードが出ている場合、可能であればそのエ�
 ***
 
 # Send-Minecraft-notifications (Instructions in English)
+Compatible with any minecraft server software that outputs the log file, including Vanilla, Forge, Fabric, Paper, and Spigot.
 
 ## Changelog
+### 2023/08/22
+- Moved some important variable to the `.env` file. This means you no longer need to edit the source code to modify messages.
+- This script can now send tip message.
+- This script can now detect restarts by sending a specified message.
+
 ### 2023/05/29
 - This script can now send a message about the current number of pleyers in your server. After a specified number of message have been sent, this script will automatically send a message.
 - This script now ignores capitalization and versions when fetching file names in your plugin folder.
@@ -157,6 +175,12 @@ pip install watchdog
 ```
 
 It doesn't matter where you execute this (this means you don't have to cd ―change directory― beforehand).
+
+> [!IMPORTANT]
+> Other libraries may also be required to install in order to run this script.
+
+#### Rename .env.example
+Make sure to rename `.env.example` to `.env` in advance. If you are using Linux, move to your project directory and run `mv .env.example .env`.
 
 #### Git (Optional)
 If you visit github.com often, it is better choice to [install git]((https://git-scm.com)).

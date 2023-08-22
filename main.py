@@ -1,40 +1,72 @@
-import os, re, time, requests, copy
+import os, re, time, requests, copy, random, chardet
 
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers.polling import PollingObserver
+from dotenv import load_dotenv
+env = "./Send-Minecraft-notifications/.env"
+load_dotenv(env)
+with open(env, 'rb') as f:
+    c = f.read()
+    env_encode = chardet.detect(c)['encoding']
 
-# ここにDiscordのWebhookのURLを貼り付けてください。
-# Enter your discord (or other services) webhook URL here!
-webhook_url = "https://paste.your.webhook.address/here"
-target_dir = "./logs/"
-target_file = "latest.log"
+def ConvertStringToArray(target:str) :
+    target = target[1:-1].replace("\"", "").replace(", ",",").replace(" ,",",")
+    target = re.split(",", target)
+    return target
+
+webhook_url = os.environ.get("WEBHOOK_URL")
+target_dir = os.environ.get("TARGET_DIR")
+target_file = os.environ.get("TARGET_FILE")
+plugin_dir = os.environ.get("PLUGIN_DIR")
+other_ignore_names = os.environ.get("IGNORE_NAMES")
+if other_ignore_names is not None:
+    other_ignore_names = ConvertStringToArray(other_ignore_names)
+kill_after_closed = os.environ.get("KILL_AFTER_CLOSED")
+if kill_after_closed.upper() == "TRUE":
+    kill_after_closed = True
+elif kill_after_closed.upper() == "FALSE":
+    kill_after_closed = False
+else:
+    raise KeyError(f"Invalid value set in your .env file: KILL_AFTER_CLOSED must be true or false, but your value is {kill_after_closed}")
+server_start_message = os.environ.get("SERVER_START_MESSAGE")
+server_stop_message = os.environ.get("SERVER_STOP_MESSAGE")
+server_restart_message = os.environ.get("SERVER_RESTART_MESSAGE")
+restart_announcement_message = os.environ.get("RESTART_ANNOUNCEMENT_MESSAGE")
+tips_messages = os.environ.get("TIPS_MESSAGES")
+if tips_messages is not None:
+    tips_messages = ConvertStringToArray(tips_messages)
 
 prev = []
 player_count = 0
 chat_count = 0
-# status = "init" or "online" or "closing"
+# status = "init" or "online" or "closing" or "restarting"
 # この数値は好きに利用してください
 # You can read this variable if you need 
 status = "init"
 
-# プラグイン名を取得
-# Fetching names of plugins
-plugin_names = os.listdir("./plugins")
+# プラグイン名を取得、フォルダーがなければ空配列を作成
+# Fetching names of plugins. If none, create an empty array
+
+if plugin_dir is None:
+    ignore_names = []
+else:
+    ignore_names = os.listdir(plugin_dir)
 
 # カンマ区切りで「名前としてみなさない」文字列を入れてください
 # Insert strings which you don't want to be recognized as a player's name, separating with comma
-plugin_names.extend(["ChunkTaskScheduler", "ChunkHolderManager", "BE"])
+if other_ignore_names is not None:
+    ignore_names.extend(other_ignore_names)
 
 # 拡張子、大文字小文字を無視
-raw_plugin_names = copy.deepcopy(plugin_names)
+raw_ignore_names = copy.deepcopy(ignore_names)
 
-for i, a in enumerate(raw_plugin_names):
-    plugin_names.append(os.path.splitext(a)[0].casefold())
-    plugin_names[i] = re.sub("[\_\-]([0-9]{1,}\.)+[0-9]{1,}", "", plugin_names[i])
+for i, a in enumerate(raw_ignore_names):
+    ignore_names.append(os.path.splitext(a)[0].casefold())
+    ignore_names[i] = re.sub("[\_\-]([0-9]{1,}\.)+[0-9]{1,}", "", ignore_names[i])
 
 
 def SendMessage(message: str) -> None:
-    global chat_count, player_count
+    global chat_count, player_count, status
     # discord以外のサービスのwebhookの場合はここを変更してください
     # If you wish to use services other than discord, customize here based on your service:
     main_content = {"content": message}
@@ -43,13 +75,17 @@ def SendMessage(message: str) -> None:
 
     # メッセージ定義
     player_count_notify_message = {"content": f':information_source: 現在サーバーにいるプレイヤーは {player_count} 人です。みんな待ってるよ:eyes:'}
+    # restartの場合にtipsを送信
+    if (status == "restarting"):
+        tip = str(tips_messages[random.randrange(len(tips_messages))]).replace("\\n","\n")
+        requests.post(webhook_url, {"content": tip.encode(env_encode)})
     # 20回ログを流したら人数を自動送信
     if (chat_count > 20):
         chat_count = 0
         requests.post(webhook_url, player_count_notify_message)
 
 def MessageCreation(text: str):
-    global status, plugin_names, player_count, chat_count
+    global status, ignore_names, player_count, chat_count
     print(text)
     # 参加メッセージ
     # When someone joined
@@ -68,15 +104,21 @@ def MessageCreation(text: str):
     # サーバー起動メッセージ
     # When your server is launched
     match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: Done ", text)
-    if len(match) :
+    if len(match) and server_start_message is not None :
         status = "online"
-        return "==================================================\n:door: **【サーバーがオンラインになりました！】** :door:\n=================================================="
+        return server_start_message
     # サーバー終了メッセージ
     # When your server is closed
-    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: Closing Server", text)
-    if len(match) :
+    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: Stopping the server", text)
+    if len(match) and server_stop_message is not None and status != "restarting" :
         status = "closing"
-        return "==================================================\n:no_entry_sign: **【サーバーがオフラインになりました。】** :no_entry_sign:\n=================================================="
+        return server_stop_message
+    # サーバー再起動メッセージ
+    # When your server is restarting
+    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: \[Not Secure] \[Server] (.*)", text)
+    if len(match) and match[0] == restart_announcement_message:
+        status = "restarting"
+        return server_restart_message
     # その他好きに追加・削除可能（上にあるものもいらないやつは消してOK）
     # You can freely add or remove some messages above or below
 
@@ -95,13 +137,13 @@ def MessageCreation(text: str):
     # セキュアではないsayコマンド経由のチャット
     # non-secure chat sent by "say" command
     match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: \[Not Secure] \[(.*?)] (.*)", text)
-    if len(match) and not(str(match[0][0]).casefold() in plugin_names) and status == "online" :
+    if len(match) and not(str(match[0][0]).casefold() in ignore_names) and status == "online" :
         print(str(match))
         return f'`[{str(match[0][0])}] {str(match[0][1])}`'
     # セキュアなsayコマンド経由のチャット
     # secure chat sent by "say" command
     match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: \[(.*?)] (.*)", text)
-    if len(match) and not(str(match[0][0]).casefold() in plugin_names) and status == "online" :
+    if len(match) and not(str(match[0][0]).casefold() in ignore_names) and status == "online" :
         print(str(match))
         return f'`[{str(match[0][0])}] {str(match[0][1])}`'
     
@@ -188,7 +230,7 @@ def GetLog(filepath: str):
             SendMessage(text)
 
     # サーバーの終了を検知したらスクリプト停止
-    if(status == "closing"):
+    if(status == "closing") and kill_after_closed:
         print("server closing detected!!")
         os._exit(-1)
 
