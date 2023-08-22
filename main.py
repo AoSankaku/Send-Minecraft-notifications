@@ -19,7 +19,7 @@ target_dir = os.environ.get("TARGET_DIR")
 target_file = os.environ.get("TARGET_FILE")
 plugin_dir = os.environ.get("PLUGIN_DIR")
 other_ignore_names = os.environ.get("IGNORE_NAMES")
-if other_ignore_names is not None:
+if other_ignore_names is not None and other_ignore_names != '':
     other_ignore_names = ConvertStringToArray(other_ignore_names)
 kill_after_closed = os.environ.get("KILL_AFTER_CLOSED")
 if kill_after_closed.upper() == "TRUE":
@@ -33,7 +33,7 @@ server_stop_message = os.environ.get("SERVER_STOP_MESSAGE")
 server_restart_message = os.environ.get("SERVER_RESTART_MESSAGE")
 restart_announcement_message = os.environ.get("RESTART_ANNOUNCEMENT_MESSAGE")
 tips_messages = os.environ.get("TIPS_MESSAGES")
-if tips_messages is not None:
+if tips_messages is not None and tips_messages != '':
     tips_messages = ConvertStringToArray(tips_messages)
 
 prev = []
@@ -47,14 +47,14 @@ status = "init"
 # プラグイン名を取得、フォルダーがなければ空配列を作成
 # Fetching names of plugins. If none, create an empty array
 
-if plugin_dir is None:
+if plugin_dir is None and plugin_dir == '':
     ignore_names = []
 else:
     ignore_names = os.listdir(plugin_dir)
 
 # カンマ区切りで「名前としてみなさない」文字列を入れてください
 # Insert strings which you don't want to be recognized as a player's name, separating with comma
-if other_ignore_names is not None:
+if other_ignore_names is not None and other_ignore_names == '':
     ignore_names.extend(other_ignore_names)
 
 # 拡張子、大文字小文字を無視
@@ -104,13 +104,13 @@ def MessageCreation(text: str):
     # サーバー起動メッセージ
     # When your server is launched
     match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: Done ", text)
-    if len(match) and server_start_message is not None :
+    if len(match) and server_start_message is not None and server_start_message != '' :
         status = "online"
         return server_start_message
     # サーバー終了メッセージ
     # When your server is closed
     match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: Stopping the server", text)
-    if len(match) and server_stop_message is not None and status != "restarting" :
+    if len(match) and server_stop_message is not None and server_stop_message != '' and status != "restarting" :
         status = "closing"
         return server_stop_message
     # サーバー再起動メッセージ
