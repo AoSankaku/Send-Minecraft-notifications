@@ -47,7 +47,7 @@ status = "init"
 # プラグイン名を取得、フォルダーがなければ空配列を作成
 # Fetching names of plugins. If none, create an empty array
 
-if plugin_dir is None and plugin_dir == '':
+if plugin_dir is None or plugin_dir == '':
     ignore_names = []
 else:
     ignore_names = os.listdir(plugin_dir)
