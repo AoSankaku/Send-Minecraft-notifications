@@ -127,6 +127,9 @@ def MessageCreation(text: str):
     match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Async Chat Thread - #(.*)/INFO]: <(.*)>(.*)", text)
     if len(match) :
         return f'`[{str(match[0][1])}]{str(match[0][2])}`'
+    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: <(.*)>(.*)", text)
+    if len(match) :
+        return f'`[{str(match[0][0])}]{str(match[0][1])}`'
     # セキュアではないチャット
     # non-secure chat
     match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Async Chat Thread - #(.*)/INFO]: \[(.*)] <(.*)>(.*)", text)
