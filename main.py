@@ -54,7 +54,7 @@ else:
 
 # カンマ区切りで「名前としてみなさない」文字列を入れてください
 # Insert strings which you don't want to be recognized as a player's name, separating with comma
-if other_ignore_names is not None and other_ignore_names == '':
+if other_ignore_names is not None and other_ignore_names != '':
     ignore_names.extend(other_ignore_names)
 
 # 拡張子、大文字小文字を無視
