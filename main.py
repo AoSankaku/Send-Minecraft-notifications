@@ -106,12 +106,14 @@ def MessageCreation(text: str):
     match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: Done ", text)
     if len(match) and server_start_message is not None and server_start_message != '' :
         status = "online"
+        player_count = 0
         return server_start_message
     # サーバー終了メッセージ
     # When your server is closed
     match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: Stopping the server", text)
     if len(match) and server_stop_message is not None and server_stop_message != '' and status != "restarting" :
         status = "closing"
+        player_count = 0
         return server_stop_message
     # サーバー再起動メッセージ
     # When your server is restarting
@@ -124,15 +126,15 @@ def MessageCreation(text: str):
 
     # セキュアなチャット
     # secure chat
-    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Async Chat Thread - #(.*)/INFO]: <(.*)>(.*)", text)
+    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Async Chat Thread - #(.*)/INFO]: <(.*?)>(.*)", text)
     if len(match) :
         return f'`[{str(match[0][1])}]{str(match[0][2])}`'
-    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: <(.*)>(.*)", text)
+    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: <(.*?)>(.*)", text)
     if len(match) :
         return f'`[{str(match[0][0])}]{str(match[0][1])}`'
     # セキュアではないチャット
     # non-secure chat
-    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Async Chat Thread - #(.*)/INFO]: \[(.*)] <(.*)>(.*)", text)
+    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Async Chat Thread - #(.*)/INFO]: \[(.*?)] <(.*)>(.*)", text)
     if len(match) :
         print(str(match))
         return f'`[{str(match[0][2])}]{str(match[0][3])}`'
