@@ -190,6 +190,12 @@ def MessageCreation(text: str):
     if len(match) :
         return f':military_medal: {str(match[0][0])} が挑戦[{str(match[0][1])}]を達成しました！'
     
+    # 目標通知
+    # goals
+    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: (.*) has reached the goal \[(.*)]", text)
+    if len(match) :
+        return f':checkered_flag: {str(match[0][0])} が目標[{str(match[0][1])}]を達成しました！'
+    
     return None
 
 
