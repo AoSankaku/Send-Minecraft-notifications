@@ -36,24 +36,27 @@ tips_messages = os.environ.get("TIPS_MESSAGES")
 if tips_messages is not None and tips_messages != '':
     tips_messages = ConvertStringToArray(tips_messages)
 
+default_prefix = "^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: "
+forge_primary_prefix = "^\[[0-9a-zA-Z]{9} [0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}] \[Server thread/INFO] \[net\.minecraft\.server\.dedicated\.DedicatedServer/]: "
+forge_secondary_prefix = "^\[[0-9a-zA-Z]{9} [0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}] \[Server thread/INFO] \[net\.minecraft\.server\.MinecraftServer/]: "
+
 prev = []
 player_count = 0
 chat_count = 0
 # status = "init" or "online" or "closing" or "restarting"
 # この数値は好きに利用してください
-# You can read this variable if you need 
+# You can read this variable if you need
 status = "init"
 
 # プラグイン名を取得、フォルダーがなければ空配列を作成
-# Fetching names of plugins. If none, create an empty array
+# Fetching names of plugins. If none, creates an empty array
 
 if plugin_dir is None or plugin_dir == '':
     ignore_names = []
 else:
     ignore_names = os.listdir(plugin_dir)
 
-# カンマ区切りで「名前としてみなさない」文字列を入れてください
-# Insert strings which you don't want to be recognized as a player's name, separating with comma
+# 名前としてみなさない文字列
 if other_ignore_names is not None and other_ignore_names != '':
     ignore_names.extend(other_ignore_names)
 
@@ -63,6 +66,8 @@ raw_ignore_names = copy.deepcopy(ignore_names)
 for i, a in enumerate(raw_ignore_names):
     ignore_names.append(os.path.splitext(a)[0].casefold())
     ignore_names[i] = re.sub("[\_\-]([0-9]{1,}\.)+[0-9]{1,}", "", ignore_names[i])
+
+print(ignore_names)
 
 
 def SendMessage(message: str) -> None:
@@ -75,50 +80,52 @@ def SendMessage(message: str) -> None:
 
     # メッセージ定義
     player_count_notify_message = {"content": f':information_source: 現在サーバーにいるプレイヤーは {player_count} 人です。みんな待ってるよ:eyes:'}
-    # restartの場合にtipsを送信
-    if (status == "restarting"):
-        tip = str(tips_messages[random.randrange(len(tips_messages))]).replace("\\n","\n")
-        requests.post(webhook_url, {"content": tip.encode(env_encode)})
-    # 20回ログを流したら人数を自動送信
-    if (chat_count > 20):
+    
+    # 16回ログを流したら、追加で人数を送信
+    if (chat_count == 16):
         chat_count = 0
         requests.post(webhook_url, player_count_notify_message)
+    # restartの場合またはチャットが8回流れるごとに、追加でtipsを送信
+    if (message == server_restart_message or (chat_count % 8 == 0 and chat_count % 16 != 0 and chat_count != 0)):
+        tip = str(tips_messages[random.randrange(len(tips_messages))]).replace("\\n","\n")
+        requests.post(webhook_url, {"content": tip.encode(env_encode)})
 
 def MessageCreation(text: str):
     global status, ignore_names, player_count, chat_count
     print(text)
     # 参加メッセージ
     # When someone joined
-    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: (.*) joined the game", text)
+    match = re.findall(f"({forge_primary_prefix}|{forge_secondary_prefix}|{default_prefix})" + "(.*) joined the game", text)
     if len(match) :
         player_count += 1
         chat_count = 0
-        return f":green_circle: {str(match[0])} が参加しました。一緒に遊んであげよう！（現在 {player_count} 名）"
+        return f":green_circle: {str(match[0][1])} が参加しました。一緒に遊んであげよう！（現在 {player_count} 名）"
     # 退出メッセージ
     # When someone left
-    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: (.*) left the game", text)
+    match = re.findall(f"({forge_primary_prefix}|{forge_secondary_prefix}|{default_prefix})" + "(.*) left the game", text)
     if len(match) :
         player_count -= 1
         chat_count = 0
-        return f":red_circle: {str(match[0])} が退出しました。（現在 {player_count} 名）"
+        return f":red_circle: {str(match[0][1])} が退出しました。（現在 {player_count} 名）"
     # サーバー起動メッセージ
     # When your server is launched
-    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: Done ", text)
+    match = re.findall(f"({forge_primary_prefix}|{forge_secondary_prefix}|{default_prefix})" + "Done ", text)
     if len(match) and server_start_message is not None and server_start_message != '' :
         status = "online"
         player_count = 0
         return server_start_message
     # サーバー終了メッセージ
     # When your server is closed
-    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: Stopping the server", text)
+    match = re.findall(f"({forge_primary_prefix}|{forge_secondary_prefix}|{default_prefix})" + "Stopping the server", text)
+    # For Forge Dedicated Server
     if len(match) and server_stop_message is not None and server_stop_message != '' and status != "restarting" :
         status = "closing"
         player_count = 0
         return server_stop_message
     # サーバー再起動メッセージ
     # When your server is restarting
-    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: \[Not Secure] \[Server] (.*)", text)
-    if len(match) and match[0] == restart_announcement_message:
+    match = re.findall(f"({forge_primary_prefix}|{forge_secondary_prefix}|{default_prefix})" + "\[Not Secure] \[Server] (.*)", text)
+    if len(match) and match[0][1] == restart_announcement_message:
         status = "restarting"
         return server_restart_message
     # その他好きに追加・削除可能（上にあるものもいらないやつは消してOK）
@@ -129,9 +136,9 @@ def MessageCreation(text: str):
     match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Async Chat Thread - #(.*)/INFO]: <(.*?)>(.*)", text)
     if len(match) :
         return f'`[{str(match[0][1])}]{str(match[0][2])}`'
-    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: <(.*?)>(.*)", text)
-    if len(match) and not(str(match[0][0]).casefold() in ignore_names):
-        return f'`[{str(match[0][0])}]{str(match[0][1])}`'
+    match = re.findall(f"({forge_primary_prefix}|{forge_secondary_prefix}|{default_prefix})" + "<(.*?)>(.*)", text)
+    if len(match) and not(str(match[0][1]).casefold() in ignore_names):
+        return f'`[{str(match[0][1])}]{str(match[0][2])}`'
     # セキュアではないチャット
     # non-secure chat
     match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Async Chat Thread - #(.*)/INFO]: \[(.*?)] <(.*)>(.*)", text)
@@ -141,16 +148,16 @@ def MessageCreation(text: str):
 
     # セキュアではないsayコマンド経由のチャット
     # non-secure chat sent by "say" command
-    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: \[Not Secure] \[(.*?)] (.*)", text)
-    if len(match) and not(str(match[0][0]).casefold() in ignore_names) and status == "online" :
+    match = re.findall(f"({forge_primary_prefix}|{forge_secondary_prefix}|{default_prefix})" + "\[Not Secure] \[(.*?)] (.*)", text)
+    if len(match) and not(str(match[0][1]).casefold() in ignore_names) :
         print(str(match))
-        return f'`[{str(match[0][0])}] {str(match[0][1])}`'
+        return f'`[{str(match[0][1])}] {str(match[0][2])}`'
     # セキュアなsayコマンド経由のチャット
     # secure chat sent by "say" command
-    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: \[(.*?)] (.*)", text)
-    if len(match) and not(str(match[0][0]).casefold() in ignore_names) and status == "online" :
+    match = re.findall(f"({forge_primary_prefix}|{forge_secondary_prefix}|{default_prefix})" + "\[(.*?)] (.*)", text)
+    if len(match) and not(str(match[0][1]).casefold() in ignore_names) :
         print(str(match))
-        return f'`[{str(match[0][0])}] {str(match[0][1])}`'
+        return f'`[{str(match[0][1])}] {str(match[0][2])}`'
     
     # セキュアではないLunachat対応コマンド
     # non-secure Luna chat(You don't need this unless someone uses Japanese in your server)
@@ -166,36 +173,37 @@ def MessageCreation(text: str):
     
     # ホワイトリストに入ってない時の通知
     # join attempt from non-whitelisted player
-    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: Disconnecting (.*?name=)(.*?),(.*?You are not whitelisted on this server!)", text)
+    match = re.findall(f"({forge_primary_prefix}|{forge_secondary_prefix}|{default_prefix})" + "Disconnecting (.*?name=)(.*?),(.*?You are not whitelisted on this server!)", text)
     if len(match) :
-        return f':yellow_circle: {str(match[0][1])} がサーバーに入ろうとしましたが、ホワイトリストに入っていません！'
+        return f':yellow_circle: {str(match[0][2])} がサーバーに入ろうとしましたが、ホワイトリストに入っていません！'
     
     # プレイヤー数再計算
     # recalculate player count
-    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: There are ([0-9]*) of a max of ([0-9]*) players online:", text)
+    # ヒント：サーバーが「list」コマンドを使用してログを流すと、人数を再計算できます
+    # Hint: The number of players will be recalculated whenever you issue the "/list" command from the console
+    match = re.findall(f"({forge_primary_prefix}|{forge_secondary_prefix}|{default_prefix})" + "There are ([0-9]*) of a max of ([0-9]*) players online:", text)
     if len(match) :
-        player_count = int(match[0][0])
+        player_count = int(match[0][1])
         chat_count = 0
-        return f':information_source: 現在サーバーにいるプレイヤーは {player_count} 人です。（上限 {str(match[0][1])} 名）'
+        return f':information_source: 現在サーバーにいるプレイヤーは {player_count} 人です。（上限 {str(match[0][2])} 名）'
     
-    # 実績通知
+    # 進捗通知
     # advancements
-    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: (.*) has made the advancement \[(.*)]", text)
+    match = re.findall(f"({forge_primary_prefix}|{forge_secondary_prefix}|{default_prefix})" + "(.*) has made the advancement \[(.*)]", text)
     if len(match) :
-        return f':trophy: {str(match[0][0])} が進捗[{str(match[0][1])}]を達成しました！'
-    
-    # 挑戦通知
-    # challenges
-    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: (.*) has completed the challenge \[(.*)]", text)
-    if len(match) :
-        return f':military_medal: {str(match[0][0])} が挑戦[{str(match[0][1])}]を達成しました！'
+        return f':trophy: {str(match[0][1])} が進捗[{str(match[0][2])}]を達成しました！'
     
     # 目標通知
     # goals
-    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Server thread/INFO]: (.*) has reached the goal \[(.*)]", text)
+    match = re.findall(f"({forge_primary_prefix}|{forge_secondary_prefix}|{default_prefix})" + "(.*) has reached the goal \[(.*)]", text)
     if len(match) :
-        return f':checkered_flag: {str(match[0][0])} が目標[{str(match[0][1])}]を達成しました！'
-    
+        return f':checkered_flag: {str(match[0][1])} が目標[{str(match[0][2])}]を達成しました！'
+
+    # 挑戦通知
+    # challenges
+    match = re.findall(f"({forge_primary_prefix}|{forge_secondary_prefix}|{default_prefix})" + "(.*) has completed the challenge \[(.*)]", text)
+    if len(match) :
+        return f':military_medal: {str(match[0][1])} が挑戦[{str(match[0][2])}]を達成しました！'
     return None
 
 
