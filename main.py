@@ -96,7 +96,7 @@ def MessageCreation(text: str):
     # 参加メッセージ
     # When someone joined
     match = re.findall(f"({forge_primary_prefix}|{forge_secondary_prefix}|{default_prefix})" + "(.*) joined the game", text)
-    if len(match) :
+    if (len(match) and not(str(match[0][1]).startswith("["))) :
         player_count += 1
         chat_count = 0
         return f":green_circle: {str(match[0][1])} が参加しました。一緒に遊んであげよう！（現在 {player_count} 名）"
