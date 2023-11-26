@@ -32,6 +32,7 @@ server_start_message = os.environ.get("SERVER_START_MESSAGE")
 server_stop_message = os.environ.get("SERVER_STOP_MESSAGE")
 server_restart_message = os.environ.get("SERVER_RESTART_MESSAGE")
 restart_announcement_message = os.environ.get("RESTART_ANNOUNCEMENT_MESSAGE")
+tips_prefix = os.environ.get("TIPS_PREFIX")
 tips_messages = os.environ.get("TIPS_MESSAGES")
 if tips_messages is not None and tips_messages != '':
     tips_messages = ConvertStringToArray(tips_messages)
@@ -87,8 +88,9 @@ def SendMessage(message: str) -> None:
         requests.post(webhook_url, player_count_notify_message)
     # restartの場合またはチャットが8回流れるごとに、追加でtipsを送信
     if (message == server_restart_message or (chat_count % 8 == 0 and chat_count % 16 != 0 and chat_count != 0)):
+        prefix = str(tips_prefix).replace("\\n","\n")
         tip = str(tips_messages[random.randrange(len(tips_messages))]).replace("\\n","\n")
-        requests.post(webhook_url, {"content": tip.encode(env_encode)})
+        requests.post(webhook_url, {"content": prefix.encode(env_encode) + tip.encode(env_encode)})
 
 def MessageCreation(text: str):
     global status, ignore_names, player_count, chat_count
