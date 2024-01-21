@@ -126,7 +126,7 @@ def MessageCreation(text: str):
         return server_stop_message
     # サーバー再起動メッセージ
     # When your server is restarting
-    match = re.findall(f"({forge_primary_prefix}|{forge_secondary_prefix}|{default_prefix})" + "\[Not Secure] \[Server] (.*)", text)
+    match = re.findall(f"({forge_primary_prefix}|{forge_secondary_prefix}|{default_prefix})" + "(\[Not Secure] |)\[Server] (.*)", text)
     if len(match) and match[0][1] == restart_announcement_message:
         status = "restarting"
         return server_restart_message
