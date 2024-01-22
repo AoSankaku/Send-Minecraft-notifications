@@ -206,6 +206,14 @@ def MessageCreation(text: str):
     match = re.findall(f"({forge_primary_prefix}|{forge_secondary_prefix}|{default_prefix})" + "(.*) has completed the challenge \[(.*)]", text)
     if len(match) :
         return f':military_medal: {str(match[0][1])} が挑戦[{str(match[0][2])}]を達成しました！'
+
+    # 実績通知（～17w13a）
+    # achievements(until 17w13a)
+    match = re.findall(f"({forge_primary_prefix}|{forge_secondary_prefix}|{default_prefix})" + "(.*) has just earned the achievement \[(.*)]", text)
+    if len(match) :
+        return f':star: {str(match[0][1])} が実績[{str(match[0][2])}]を達成しました！'
+    
+    # 何もマッチしなかった場合はNoneを返す
     return None
 
 
