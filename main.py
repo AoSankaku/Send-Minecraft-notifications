@@ -213,6 +213,12 @@ def MessageCreation(text: str):
     match = re.findall(f"({prefix_wildcard_without_brackets})" + "(.*) has just earned the achievement \[(.*)]", text)
     if len(match) :
         return f':star: {str(match[0][1])} が実績[{str(match[0][2])}]を達成しました！'
+
+    # 死亡通知（実験的機能）
+    # death messages(experimental feature)
+    match = re.findall(f"({prefix_wildcard_without_brackets})" + "(.*) (was|died|drown|withered|experienced|blew|hit|fell|went|walked|burned|tried|discovered|froze|starved|suffocated|left) (.*)", text)
+    if len(match) :
+        return f':skull_crossbones: {str(match[0][1])} が死んでしまいました。助けに行ってあげよう！\n{str(match[0][1])} {str(match[0][2])} {str(match[0][3])}'
     
     # 何もマッチしなかった場合はNoneを返す
     return None
