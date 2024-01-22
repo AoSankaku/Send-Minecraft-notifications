@@ -218,7 +218,7 @@ def MessageCreation(text: str):
     # death messages(experimental feature)
     match = re.findall(f"({prefix_wildcard_without_brackets})" + "(.*) (was|died|drown|withered|experienced|blew|hit|fell|went|walked|burned|tried|discovered|froze|starved|suffocated|left) (.*)", text)
     if len(match) :
-        return f':skull_crossbones: {str(match[0][1])} が死んでしまいました。助けに行ってあげよう！\n{str(match[0][1])} {str(match[0][2])} {str(match[0][3])}'
+        return f':skull_crossbones: {str(match[0][1])} が死んでしまいました。助けに行ってあげよう！({str(match[0][1])} {str(match[0][2])} {str(match[0][3])})'
     
     # 何もマッチしなかった場合はNoneを返す
     return None
