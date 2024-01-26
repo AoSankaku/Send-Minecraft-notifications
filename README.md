@@ -3,6 +3,10 @@
 Vanilla、Forge、Fabric、Paper、Spigotなどログを出力するすべてのサーバーで使用可能な、独立したPythonスクリプトです。
 
 ## 更新履歴
+
+### 2024/01/25
+- 実験的機能として、死亡時メッセージが出せるようになりました。<プレイヤー名>の右に、「was|died|drown|withered|experienced|blew|hit|fell|went|walked|burned|tried|discovered|froze|starved|suffocated|left」のいずれかの語が続くときに送信するように機械的に判定しているため、不具合が生じる可能性もあります。
+
 ### 2023/08/22
 - 各種変数を`.env`ファイルに移行しました。これにより、ソースコードを変更しなくても半分以上の部分で設定が可能になりました。
 - Tipsメッセージを流すことができるようになりました。
@@ -132,6 +136,10 @@ Pythonのエラーコードが出ている場合、可能であればそのエ�
 Compatible with any minecraft server software that outputs the log file, including Vanilla, Forge, Fabric, Paper, and Spigot.
 
 ## Changelog
+
+### 2024/01/26
+- As an experimental feature, this script now can send messages on player's death. It is completely automatically detects the word "was|died|drown|withered|experienced|blew|hit|fell|went|walked|burned|tried|discovered|froze|starved|suffocated|left" and send a message. This may malfunction sometimes.
+
 ### 2023/08/22
 - Moved some important variable to the `.env` file. This means you no longer need to edit the source code to modify messages.
 - This script can now send tip message.
