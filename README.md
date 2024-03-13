@@ -4,6 +4,9 @@ Vanilla、Forge、Fabric、Paper、Spigotなどログを出力するすべての
 
 ## 更新履歴
 
+### 2024/03/14
+- コードがMITライセンスになりました。自由に改造・再配布・商用利用していただくことが可能です。
+
 ### 2024/01/25
 - 実験的機能として、死亡時メッセージが出せるようになりました。<プレイヤー名>の右に、「was|died|drown|withered|experienced|blew|hit|fell|went|walked|burned|tried|discovered|froze|starved|suffocated|left」のいずれかの語が続くときに送信するように機械的に判定しているため、不具合が生じる可能性もあります。
 
@@ -136,6 +139,9 @@ Pythonのエラーコードが出ている場合、可能であればそのエ�
 Compatible with any minecraft server software that outputs the log file, including Vanilla, Forge, Fabric, Paper, and Spigot.
 
 ## Changelog
+
+### 2024/03/14
+- This script is now licensed under the MIT LICENSE!
 
 ### 2024/01/25
 - As an experimental feature, this script now can send messages on player's death. It is completely automatically detects the word "was|died|drown|withered|experienced|blew|hit|fell|went|walked|burned|tried|discovered|froze|starved|suffocated|left" and send a message. This may malfunction sometimes.
