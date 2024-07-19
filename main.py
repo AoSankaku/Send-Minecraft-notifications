@@ -33,6 +33,8 @@ server_stop_message = os.environ.get("SERVER_STOP_MESSAGE")
 server_restart_message = os.environ.get("SERVER_RESTART_MESSAGE")
 restart_announcement_message = os.environ.get("RESTART_ANNOUNCEMENT_MESSAGE")
 tips_prefix = os.environ.get("TIPS_PREFIX")
+if tips_prefix is None:
+    tips_prefix = ""
 tips_messages = os.environ.get("TIPS_MESSAGES")
 if tips_messages is not None and tips_messages != '':
     tips_messages = ConvertStringToArray(tips_messages)
