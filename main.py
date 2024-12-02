@@ -110,12 +110,14 @@ def SendMessage(message: dict) -> None:
             "username": sender_name,
             "avatar_url": sender_icon,
         }
+        
+        requests.post(webhook_url, json=main_content)
     else:
         # discord以外のサービスのwebhookの場合はここを変更してください
         # If you wish to use services other than discord, customize here based on your service:
         main_content = {"content": message["message"]}
+        requests.post(webhook_url, main_content)
     
-    requests.post(webhook_url, main_content)
     chat_count += 1
 
     # メッセージ定義
