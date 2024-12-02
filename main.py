@@ -113,7 +113,7 @@ def SendMessage(message: dict) -> None:
     else:
         # discord以外のサービスのwebhookの場合はここを変更してください
         # If you wish to use services other than discord, customize here based on your service:
-        main_content = {"content": message}
+        main_content = {"content": message["message"]}
     
     requests.post(webhook_url, main_content)
     chat_count += 1
@@ -463,7 +463,7 @@ def GetLog(filepath: str):
             if embed_mode and data.get('embed', None) is not None:
                 SendMessage(data['embed'])
             else:
-                SendMessage(data['noembed']['message'])
+                SendMessage(data['noembed'])
 
     # サーバーの終了を検知したらスクリプト停止
     if(status == "closing") and kill_after_closed:
