@@ -111,6 +111,8 @@ def SendMessage(message: dict) -> None:
             "username": sender_name,
             "avatar_url": sender_icon,
         }
+
+        print(main_content)
         
         requests.post(webhook_url, json=main_content)
     else:
