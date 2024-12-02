@@ -89,18 +89,19 @@ print(ignore_names)
 
 def SendMessage(message: dict) -> None:
     global chat_count, player_count, status, player_name
-    if embed_mode and message.get('embed', None) is not None:
+    embed = message.get("embed")
+    if embed_mode and embed:
         main_content = {
             "content": "",
             "tts": False,
             "embeds": [
                 {
-                    "title": message["title"],
-                    "description": "",
-                    "color": message["color"],
+                    "title": embed.get("title"),
+                    "description": embed.get("desc", ""),
+                    "color": embed.get("color", 0),
                     "author": {
-                        "name": message["name"],
-                        "icon_url": f"{player_icon_api}{player_name}",
+                        "name": embed.get("name"),
+                        "icon_url": f"{player_icon_api}{embed.get("name")}",
                     },
                     "fields": [],
                 }
