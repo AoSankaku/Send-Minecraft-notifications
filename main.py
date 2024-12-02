@@ -48,7 +48,7 @@ else:
     embed_mode = False
 sender_name = os.environ.get("SENDER_NAME")
 sender_icon = os.environ.get("SENDER_ICON")
-player_icon_api = os.environ.get("SENDER_ICON_API")
+player_icon_api = os.environ.get("PLAYER_ICON_API")
 
 
 forge_primary_prefix = "^\[[0-9a-zA-Z]{9} [0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}] \[Server thread/INFO] \[net\.minecraft\.server\.dedicated\.DedicatedServer/]: "
