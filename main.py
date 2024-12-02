@@ -14,6 +14,11 @@ def ConvertStringToArray(target:str) :
     target = re.split(",", target)
     return target
 
+def hexToInt(color_hex: str) -> int:
+    if color_hex.startswith('#'):
+        color_hex = color_hex[1:]  # #で始まるなら、'#'を取り除く
+    return int(color_hex, 16)  # 16進数を整数に変換
+
 webhook_url = os.environ.get("WEBHOOK_URL")
 target_dir = os.environ.get("TARGET_DIR")
 target_file = os.environ.get("TARGET_FILE")
@@ -98,7 +103,7 @@ def SendMessage(message: dict) -> None:
                 {
                     "title": embed.get("title"),
                     "description": embed.get("desc", ""),
-                    "color": embed.get("color", 0),
+                    "color": hexToInt(embed.get("color", 0)),
                     "author": {
                         "name": embed.get("name"),
                         "icon_url": f"{player_icon_api}{embed.get("name")}",
