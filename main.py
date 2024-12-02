@@ -192,7 +192,7 @@ def MessageCreation(text: str):
         }
     # サーバー終了メッセージ
     # When your server is closed
-    match = re.findall(f"({prefix_wildcard_without_brackets})" + r"Stopping the server", text)
+    match = re.findall(f"({prefix_wildcard_without_brackets})" + r"Stopping( the)? server", text)
     # For Forge Dedicated Server
     if len(match) and server_stop_message is not None and server_stop_message != '' and status != "restarting" :
         status = "closing"
