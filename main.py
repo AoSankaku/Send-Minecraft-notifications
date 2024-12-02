@@ -221,10 +221,30 @@ def MessageCreation(text: str):
     # secure chat
     match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Async Chat Thread - #(.*)/INFO]: <(.*?)>(.*)", text)
     if len(match) :
-        return f'`[{str(match[0][1])}]{str(match[0][2])}`'
+        return {
+            "embed": {
+                "color": "#888",
+                "name": str(match[0][1]),
+                "title": str(match[0][2]),
+            },
+            "noembed": {
+                "type": "normal",
+                "message": f'`[{str(match[0][1])}] {str(match[0][2])}`'
+            },
+        }
     match = re.findall(f"({prefix_wildcard_without_brackets})" + r"<(.*?)>(.*)", text)
     if len(match) and not(str(match[0][1]).casefold() in ignore_names):
-        return f'`[{str(match[0][1])}]{str(match[0][2])}`'
+        return {
+            "embed": {
+                "color": "#888",
+                "name": str(match[0][1]),
+                "title": str(match[0][2]),
+            },
+            "noembed": {
+                "type": "normal",
+                "message": f'`[{str(match[0][1])}] {str(match[0][2])}`'
+            },
+        }
     # セキュアではないチャット
     # non-secure chat
     match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Async Chat Thread - #(.*)/INFO]: \[(.*?)] <(.*)>(.*)", text)
