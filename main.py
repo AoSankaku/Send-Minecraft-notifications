@@ -147,7 +147,7 @@ def MessageCreation(text: str):
             "embed": {
                 "color": "#0c0",
                 "name": str(match[0][1]),
-                "message": f"サーバーに参加しました。一緒に遊んであげよう！\n（現在 {player_count} 名）"
+                "title": f"サーバーに参加しました。一緒に遊んであげよう！\n（現在 {player_count} 名）"
             },
             "noembed": {
                 "type": "normal",
@@ -164,7 +164,7 @@ def MessageCreation(text: str):
             "embed": {
                 "color": "#c00",
                 "name": str(match[0][1]),
-                "message": f"サーバーから退室しました。\n（現在 {player_count} 名）"
+                "title": f"サーバーから退室しました。\n（現在 {player_count} 名）"
             },
             "noembed": {
                 "type": "normal",
@@ -227,7 +227,7 @@ def MessageCreation(text: str):
             "embed": {
                 "color": "#888",
                 "name": str(match[0][2]),
-                "message": str(match[0][3]),
+                "title": str(match[0][3]),
             },
             "noembed": {
                 "type": "normal",
@@ -244,7 +244,7 @@ def MessageCreation(text: str):
             "embed": {
                 "color": "#888",
                 "name": str(match[0][1]),
-                "message": str(match[0][2]),
+                "title": str(match[0][2]),
             },
             "noembed": {
                 "type": "normal",
@@ -260,7 +260,7 @@ def MessageCreation(text: str):
             "embed": {
                 "color": "#888",
                 "name": str(match[0][1]),
-                "message": str(match[0][2]),
+                "title": str(match[0][2]),
             },
             "noembed": {
                 "type": "normal",
@@ -277,7 +277,7 @@ def MessageCreation(text: str):
             "embed": {
                 "color": "#888",
                 "name": str(match[0][1]),
-                "message": str(match[0][2]),
+                "title": str(match[0][2]),
             },
             "noembed": {
                 "type": "normal",
@@ -294,7 +294,7 @@ def MessageCreation(text: str):
             "embed": {
                 "color": "#888",
                 "name": str(match[0][1]),
-                "message": str(match[0][2]),
+                "title": str(match[0][2]),
             },
             "noembed": {
                 "type": "normal",
@@ -311,7 +311,7 @@ def MessageCreation(text: str):
             "embed": {
                 "color": "#f8f",
                 "name": str(match[0][2]),
-                "message": "サーバーに入ろうとしましたが、ホワイトリストに入っていません！",
+                "title": "サーバーに入ろうとしましたが、ホワイトリストに入っていません！",
             },
             "noembed": {
                 "type": "normal",
@@ -331,7 +331,7 @@ def MessageCreation(text: str):
             "embed": {
                 "color": "#f8f",
                 "name": str(match[0][2]),
-                "message": f':information_source: 現在サーバーにいるプレイヤーは {player_count} 人です。（上限 {str(match[0][2])} 名）',
+                "title": f':information_source: 現在サーバーにいるプレイヤーは {player_count} 人です。（上限 {str(match[0][2])} 名）',
             },
             "noembed": {
                 "type": "normal",
@@ -347,7 +347,7 @@ def MessageCreation(text: str):
             "embed": {
                 "color": "#f8f",
                 "name": str(match[0][1]),
-                "message": f':trophy: 進捗[{str(match[0][2])}]を達成しました！',
+                "title": f':trophy: 進捗[{str(match[0][2])}]を達成しました！',
             },
             "noembed": {
                 "type": "normal",
@@ -363,7 +363,7 @@ def MessageCreation(text: str):
             "embed": {
                 "color": "#f8f",
                 "name": str(match[0][1]),
-                "message": f':checkered_flag: 目標[{str(match[0][2])}]を達成しました！',
+                "title": f':checkered_flag: 目標[{str(match[0][2])}]を達成しました！',
             },
             "noembed": {
                 "type": "normal",
@@ -379,7 +379,7 @@ def MessageCreation(text: str):
             "embed": {
                 "color": "#f8f",
                 "name": str(match[0][1]),
-                "message": f':trophy: 進捗[{str(match[0][2])}]を達成しました！',
+                "title": f':trophy: 進捗[{str(match[0][2])}]を達成しました！',
             },
             "noembed": {
                 "type": "normal",
@@ -395,7 +395,7 @@ def MessageCreation(text: str):
             "embed": {
                 "color": "#f8f",
                 "name": str(match[0][1]),
-                "message": f':military_metal: 挑戦[{str(match[0][2])}]を達成しました！',
+                "title": f':military_metal: 挑戦[{str(match[0][2])}]を達成しました！',
             },
             "noembed": {
                 "type": "normal",
@@ -411,7 +411,8 @@ def MessageCreation(text: str):
             "embed": {
                 "color": "#f8f",
                 "name": str(match[0][1]),
-                "message": f':skull_crossbones: 死んでしまいました。助けに行ってあげよう！({str(match[0][1])} {str(match[0][2])} {str(match[0][3])})',
+                "title": f':skull_crossbones: 死んでしまいました。助けに行ってあげよう！',
+                "desc": f'{str(match[0][1])} {str(match[0][2])} {str(match[0][3])}'
             },
             "noembed": {
                 "type": "normal",
