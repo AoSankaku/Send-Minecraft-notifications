@@ -463,7 +463,7 @@ def GetLog(filepath: str):
         data = MessageCreation(e)
         if data is not None:
             if embed_mode and data.get('embed', None) is not None:
-                SendMessage(data['embed'])
+                SendMessage(data)
             else:
                 SendMessage(data['noembed'])
 
