@@ -1,4 +1,4 @@
-import os, re, time, requests, copy, random, chardet
+import os, re, time, requests, copy, random, chardet, warnings
 
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers.polling import PollingObserver
@@ -38,6 +38,18 @@ if tips_prefix is None:
 tips_messages = os.environ.get("TIPS_MESSAGES")
 if tips_messages is not None and tips_messages != '':
     tips_messages = ConvertStringToArray(tips_messages)
+embed_mode = os.environ.get("EMBED_MODE")
+if embed_mode.upper() == "TRUE":
+    embed_mode = True
+elif embed_mode.upper() == "FALSE":
+    embed_mode = False
+else:
+    warnings.warn(f"Invalid value set in your .env file: EMBED_MODE must be true or false, but your value is {kill_after_closed}")
+    embed_mode = False
+sender_name = os.environ.get("SENDER_NAME")
+sender_icon = os.environ.get("SENDER_ICON")
+player_icon_api = os.environ.get("SENDER_ICON_API")
+
 
 forge_primary_prefix = "^\[[0-9a-zA-Z]{9} [0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}] \[Server thread/INFO] \[net\.minecraft\.server\.dedicated\.DedicatedServer/]: "
 forge_secondary_prefix = "^\[[0-9a-zA-Z]{9} [0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}] \[Server thread/INFO] \[net\.minecraft\.server\.MinecraftServer/]: "
@@ -51,6 +63,7 @@ chat_count = 0
 # この数値は好きに利用してください
 # You can read this variable if you need
 status = "init"
+player_name = ""
 
 # プラグイン名を取得、フォルダーがなければ空配列を作成
 # Fetching names of plugins. If none, creates an empty array
@@ -74,11 +87,34 @@ for i, a in enumerate(raw_ignore_names):
 print(ignore_names)
 
 
-def SendMessage(message: str) -> None:
-    global chat_count, player_count, status
-    # discord以外のサービスのwebhookの場合はここを変更してください
-    # If you wish to use services other than discord, customize here based on your service:
-    main_content = {"content": message}
+def SendMessage(message: dict) -> None:
+    global chat_count, player_count, status, player_name
+    if embed_mode and message.get('embed', None) is not None:
+        main_content = {
+            "content": "",
+            "tts": False,
+            "embeds": [
+                {
+                    "title": message["title"],
+                    "description": "",
+                    "color": message["color"],
+                    "author": {
+                        "name": message["name"],
+                        "icon_url": f"{player_icon_api}{player_name}",
+                    },
+                    "fields": [],
+                }
+            ],
+            "components": [],
+            "actions": {},
+            "username": sender_name,
+            "avatar_url": sender_icon,
+        }
+    else:
+        # discord以外のサービスのwebhookの場合はここを変更してください
+        # If you wish to use services other than discord, customize here based on your service:
+        main_content = {"content": message}
+    
     requests.post(webhook_url, main_content)
     chat_count += 1
 
@@ -104,21 +140,46 @@ def MessageCreation(text: str):
     if (len(match) and not(str(match[0][1]).startswith("["))) :
         player_count += 1
         chat_count = 0
-        return f":green_circle: {str(match[0][1])} が参加しました。一緒に遊んであげよう！（現在 {player_count} 名）"
+        return {
+            "embed": {
+                "color": "#0c0",
+                "name": str(match[0][1]),
+                "message": f"サーバーに参加しました。一緒に遊んであげよう！\n（現在 {player_count} 名）"
+            },
+            "noembed": {
+                "type": "normal",
+                "message": f":green_circle: {str(match[0][1])} が参加しました。一緒に遊んであげよう！（現在 {player_count} 名）"
+            },
+        }
     # 退出メッセージ
     # When someone left
     match = re.findall(f"({prefix_wildcard_without_brackets})" + r"(.*) left the game", text)
     if len(match) :
         player_count -= 1
         chat_count = 0
-        return f":red_circle: {str(match[0][1])} が退出しました。（現在 {player_count} 名）"
+        return {
+            "embed": {
+                "color": "#c00",
+                "name": str(match[0][1]),
+                "message": f"サーバーから退室しました。\n（現在 {player_count} 名）"
+            },
+            "noembed": {
+                "type": "normal",
+                "message": f":red_circle: {str(match[0][1])} が退出しました。（現在 {player_count} 名）"
+            },
+        }
     # サーバー起動メッセージ
     # When your server is launched
     match = re.findall(f"({prefix_wildcard_without_brackets})" + r"Done ", text)
     if len(match) and server_start_message is not None and server_start_message != '' :
         status = "online"
         player_count = 0
-        return server_start_message
+        return {
+            "noembed": {
+                "type": "server_start",
+                "message": server_start_message,
+            }
+        }
     # サーバー終了メッセージ
     # When your server is closed
     match = re.findall(f"({prefix_wildcard_without_brackets})" + r"Stopping the server", text)
@@ -126,13 +187,23 @@ def MessageCreation(text: str):
     if len(match) and server_stop_message is not None and server_stop_message != '' and status != "restarting" :
         status = "closing"
         player_count = 0
-        return server_stop_message
+        return {
+            "noembed": {
+                "type": "server_stop",
+                "message": server_stop_message,
+            }
+        }
     # サーバー再起動メッセージ
     # When your server is restarting
     match = re.findall(f"({prefix_wildcard_without_brackets})" + r"(\[Not Secure] |)\[Server] (.*)", text)
     if len(match) and match[0][2] == restart_announcement_message:
         status = "restarting"
-        return server_restart_message
+        return {
+            "noembed": {
+                "type": "server_restart",
+                "message": server_restart_message,
+            }
+        }
     # その他好きに追加・削除可能（上にあるものもいらないやつは消してOK）
     # You can freely add or remove some messages above or below
 
@@ -149,38 +220,101 @@ def MessageCreation(text: str):
     match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Async Chat Thread - #(.*)/INFO]: \[(.*?)] <(.*)>(.*)", text)
     if len(match) :
         print(str(match))
-        return f'`[{str(match[0][2])}]{str(match[0][3])}`'
+        return {
+            "embed": {
+                "color": "#888",
+                "name": str(match[0][2]),
+                "message": str(match[0][3]),
+            },
+            "noembed": {
+                "type": "normal",
+                "message": f'`[{str(match[0][2])}]{str(match[0][3])}`'
+            },
+        }
 
     # セキュアではないsayコマンド経由のチャット
     # non-secure chat sent by "say" command
     match = re.findall(f"({prefix_wildcard_without_brackets})" + r"\[Not Secure] \[(.*?)] (.*)", text)
     if len(match) and not(str(match[0][1]).casefold() in ignore_names) :
         print(str(match))
-        return f'`[{str(match[0][1])}] {str(match[0][2])}`'
+        return {
+            "embed": {
+                "color": "#888",
+                "name": str(match[0][1]),
+                "message": str(match[0][2]),
+            },
+            "noembed": {
+                "type": "normal",
+                "message": f'`[{str(match[0][1])}] {str(match[0][2])}`'
+            },
+        }
     # セキュアなsayコマンド経由のチャット
     # secure chat sent by "say" command
     match = re.findall(f"({prefix_wildcard_without_brackets})" + r"\[(.*?)] (.*)", text)
     if len(match) and not(str(match[0][1]).casefold() in ignore_names) :
         print(str(match))
-        return f'`[{str(match[0][1])}] {str(match[0][2])}`'
+        return {
+            "embed": {
+                "color": "#888",
+                "name": str(match[0][1]),
+                "message": str(match[0][2]),
+            },
+            "noembed": {
+                "type": "normal",
+                "message": f'`[{str(match[0][1])}] {str(match[0][2])}`'
+            },
+        }
     
     # セキュアではないLunachat対応コマンド
     # non-secure Luna chat(You don't need this unless someone uses Japanese in your server)
     match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Async Chat Thread - #(.*)/INFO]: \[Not Secure] (.*): (.*)", text)
     if len(match) :
-        return f'`[{str(match[0][1])}] {str(match[0][2])}`'
+        print(str(match))
+        return {
+            "embed": {
+                "color": "#888",
+                "name": str(match[0][1]),
+                "message": str(match[0][2]),
+            },
+            "noembed": {
+                "type": "normal",
+                "message": f'`[{str(match[0][1])}] {str(match[0][2])}`'
+            },
+        }
     
     # セキュアなLunachat対応コマンド
     # secure Luna chat(You don't need this unless someone uses Japanese in your server)
     match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Async Chat Thread - #(.*)/INFO]: (.*): (.*)", text)
     if len(match) :
-        return f'`[{str(match[0][1])}] {str(match[0][2])}`'
+        print(str(match))
+        return {
+            "embed": {
+                "color": "#888",
+                "name": str(match[0][1]),
+                "message": str(match[0][2]),
+            },
+            "noembed": {
+                "type": "normal",
+                "message": f'`[{str(match[0][1])}] {str(match[0][2])}`'
+            },
+        }
     
     # ホワイトリストに入ってない時の通知
     # join attempt from non-whitelisted player
     match = re.findall(f"({prefix_wildcard_without_brackets})" + r"Disconnecting (.*?name=)(.*?),(.*?You are not whitelisted on this server!)", text)
     if len(match) :
-        return f':yellow_circle: {str(match[0][2])} がサーバーに入ろうとしましたが、ホワイトリストに入っていません！'
+        print(str(match))
+        return {
+            "embed": {
+                "color": "#f8f",
+                "name": str(match[0][2]),
+                "message": "サーバーに入ろうとしましたが、ホワイトリストに入っていません！",
+            },
+            "noembed": {
+                "type": "normal",
+                "message": f':yellow_circle: {str(match[0][2])} がサーバーに入ろうとしましたが、ホワイトリストに入っていません！'
+            },
+        }
     
     # プレイヤー数再計算
     # recalculate player count
@@ -190,37 +324,98 @@ def MessageCreation(text: str):
     if len(match) :
         player_count = int(match[0][1])
         chat_count = 0
-        return f':information_source: 現在サーバーにいるプレイヤーは {player_count} 人です。（上限 {str(match[0][2])} 名）'
+        return {
+            "embed": {
+                "color": "#f8f",
+                "name": str(match[0][2]),
+                "message": f':information_source: 現在サーバーにいるプレイヤーは {player_count} 人です。（上限 {str(match[0][2])} 名）',
+            },
+            "noembed": {
+                "type": "normal",
+                "message": f':information_source: 現在サーバーにいるプレイヤーは {player_count} 人です。（上限 {str(match[0][2])} 名）'
+            },
+        }
     
     # 進捗通知
     # advancements
     match = re.findall(f"({prefix_wildcard_without_brackets})" + r"(.*) has made the advancement \[(.*)]", text)
     if len(match) :
-        return f':trophy: {str(match[0][1])} が進捗[{str(match[0][2])}]を達成しました！'
+        return {
+            "embed": {
+                "color": "#f8f",
+                "name": str(match[0][1]),
+                "message": f':trophy: 進捗[{str(match[0][2])}]を達成しました！',
+            },
+            "noembed": {
+                "type": "normal",
+                "message": f':trophy: {str(match[0][1])} が進捗[{str(match[0][2])}]を達成しました！'
+            },
+        }
     
     # 目標通知
     # goals
     match = re.findall(f"({prefix_wildcard_without_brackets})" + r"(.*) has reached the goal \[(.*)]", text)
     if len(match) :
-        return f':checkered_flag: {str(match[0][1])} が目標[{str(match[0][2])}]を達成しました！'
+        return {
+            "embed": {
+                "color": "#f8f",
+                "name": str(match[0][1]),
+                "message": f':checkered_flag: 目標[{str(match[0][2])}]を達成しました！',
+            },
+            "noembed": {
+                "type": "normal",
+                "message": f':checkered_flag: {str(match[0][1])} が目標[{str(match[0][2])}]を達成しました！'
+            },
+        }
 
     # 挑戦通知
     # challenges
     match = re.findall(f"({prefix_wildcard_without_brackets})" + r"(.*) has completed the challenge \[(.*)]", text)
     if len(match) :
-        return f':military_medal: {str(match[0][1])} が挑戦[{str(match[0][2])}]を達成しました！'
+        return {
+            "embed": {
+                "color": "#f8f",
+                "name": str(match[0][1]),
+                "message": f':trophy: 進捗[{str(match[0][2])}]を達成しました！',
+            },
+            "noembed": {
+                "type": "normal",
+                "message": f':trophy: {str(match[0][1])} が進捗[{str(match[0][2])}]を達成しました！'
+            },
+        }
 
     # 実績通知（～17w13a）
     # achievements(until 17w13a)
     match = re.findall(f"({prefix_wildcard_without_brackets})" + r"(.*) has just earned the achievement \[(.*)]", text)
     if len(match) :
-        return f':star: {str(match[0][1])} が実績[{str(match[0][2])}]を達成しました！'
+        return {
+            "embed": {
+                "color": "#f8f",
+                "name": str(match[0][1]),
+                "message": f':military_metal: 挑戦[{str(match[0][2])}]を達成しました！',
+            },
+            "noembed": {
+                "type": "normal",
+                "message": f':military_metal: {str(match[0][1])} が挑戦[{str(match[0][2])}]を達成しました！'
+            },
+        }
 
     # 死亡通知（実験的機能）
     # death messages(experimental feature)
     match = re.findall(f"({prefix_wildcard_without_brackets})" + r"(.*) (was|died|drown|withered|experienced|blew|hit|fell|went|walked|burned|tried|discovered|froze|starved|suffocated|left) (.*)", text)
     if len(match) :
-        return f':skull_crossbones: {str(match[0][1])} が死んでしまいました。助けに行ってあげよう！({str(match[0][1])} {str(match[0][2])} {str(match[0][3])})'
+        return {
+            "embed": {
+                "color": "#f8f",
+                "name": str(match[0][1]),
+                "message": f':skull_crossbones: 死んでしまいました。助けに行ってあげよう！({str(match[0][1])} {str(match[0][2])} {str(match[0][3])})',
+            },
+            "noembed": {
+                "type": "normal",
+                "message": f':skull_crossbones: {str(match[0][1])} が死んでしまいました。助けに行ってあげよう！({str(match[0][1])} {str(match[0][2])} {str(match[0][3])})'
+            },
+        }
+        return 
     
     # 何もマッチしなかった場合はNoneを返す
     return None
@@ -263,13 +458,16 @@ def GetLog(filepath: str):
 
     # 送信メッセージ作成
     for e in diff:
-        text = MessageCreation(e)
-        if text is not None:
-            SendMessage(text)
+        data = MessageCreation(e)
+        if data is not None:
+            if embed_mode and data.get('embed', None) is not None:
+                SendMessage(data['embed'])
+            else:
+                SendMessage(data['noembed']['message'])
 
     # サーバーの終了を検知したらスクリプト停止
     if(status == "closing") and kill_after_closed:
-        print("server closing detected!!")
+        print("Server closing detected! Terminating script...")
         os._exit(-1)
 
 
