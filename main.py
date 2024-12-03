@@ -187,7 +187,7 @@ def MessageCreation(text: str):
         }
     # サーバー起動メッセージ
     # When your server is launched
-    match = re.findall(f"({prefix_wildcard_without_brackets})" + r"Done ", text)
+    match = re.findall(f"({prefix_wildcard_without_brackets})" + r"Done ", text) and status != "online"
     if len(match) and server_start_message is not None and server_start_message != '' :
         status = "online"
         player_count = 0
@@ -201,7 +201,7 @@ def MessageCreation(text: str):
     # When your server is closed
     match = re.findall(f"({prefix_wildcard_without_brackets})" + r"Stopping( the)? server", text)
     # For Forge Dedicated Server
-    if len(match) and server_stop_message is not None and server_stop_message != '' and status != "restarting" :
+    if len(match) and server_stop_message is not None and server_stop_message != '' and status != "restarting" and status != "closing" :
         status = "closing"
         player_count = 0
         return {
