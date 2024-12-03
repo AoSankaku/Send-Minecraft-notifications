@@ -69,6 +69,8 @@ chat_count = 0
 # You can read this variable if you need
 status = "init"
 player_name = ""
+server_console_name = "SERVER-CONSOLE-NAME!"
+default_server_console_pic = "https://aosankaku.github.io/Send-Minecraft-notifications/img/server.drawio.png"
 
 # プラグイン名を取得、フォルダーがなければ空配列を作成
 # Fetching names of plugins. If none, creates an empty array
@@ -105,8 +107,8 @@ def SendMessage(message: dict) -> None:
                     "description": embed.get("desc", ""),
                     "color": hexToInt(embed.get("color", 0)),
                     "author": {
-                        "name": embed.get("name"),
-                        "icon_url": f"{player_icon_api}{embed.get("name")}",
+                        "name": "Server" if embed.get("name") == server_console_name else embed.get("name"),
+                        "icon_url": default_server_console_pic if embed.get("name") == server_console_name else f"{player_icon_api}{embed.get("name")}",
                     },
                     "fields": [],
                 }
@@ -262,70 +264,54 @@ def MessageCreation(text: str):
             },
         }
 
-    # セキュアではないsayコマンド経由のチャット
-    # non-secure chat sent by "say" command
-    match = re.findall(f"({prefix_wildcard_without_brackets})" + r"\[Not Secure] \[(.*?)] (.*)", text)
-    if len(match) and not(str(match[0][1]).casefold() in ignore_names) :
+    # sayコマンド経由のチャット
+    # chat sent by "say" command
+    match = re.findall(f"({prefix_wildcard_without_brackets})" + r"(\[Not Secure] )?\[(.*?)] (.*)", text)
+    # 「Server」からのチャットはサーバーコンソール経由のチャットと判定
+    # 画像：　https://aosankaku.github.io/Send-Minecraft-notifications/img/server.drawio.png
+    if len(match) and str(match[0][2]) == "Server" :
         print(str(match))
         return {
             "embed": {
                 "color": "#888",
-                "name": str(match[0][1]),
+                "name": server_console_name,
                 "title": str(match[0][2]),
+                "desc": str(match[0][3]),
             },
             "noembed": {
                 "type": "normal",
-                "message": f'`[{str(match[0][1])}] {str(match[0][2])}`'
+                "message": f'`[{str(match[0][2])}] {str(match[0][3])}`'
             },
         }
-    # セキュアなsayコマンド経由のチャット
-    # secure chat sent by "say" command
-    match = re.findall(f"({prefix_wildcard_without_brackets})" + r"\[(.*?)] (.*)", text)
-    if len(match) and not(str(match[0][1]).casefold() in ignore_names) :
+    # 上記以外
+    if len(match) and not(str(match[0][2]).casefold() in ignore_names) :
         print(str(match))
         return {
             "embed": {
                 "color": "#888",
-                "name": str(match[0][1]),
-                "title": str(match[0][2]),
+                "name": str(match[0][2]),
+                "title": str(match[0][3]),
             },
             "noembed": {
                 "type": "normal",
-                "message": f'`[{str(match[0][1])}] {str(match[0][2])}`'
+                "message": f'`[{str(match[0][2])}] {str(match[0][3])}`'
             },
         }
     
-    # セキュアではないLunachat対応コマンド
+    # Lunachat対応コマンド
     # non-secure Luna chat(You don't need this unless someone uses Japanese in your server)
-    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Async Chat Thread - #(.*)/INFO]: \[Not Secure] (.*): (.*)", text)
+    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Async Chat Thread - #(.*)/INFO]: (\[Not Secure] )?(.*): (.*)", text)
     if len(match) :
         print(str(match))
         return {
             "embed": {
                 "color": "#888",
-                "name": str(match[0][1]),
-                "title": str(match[0][2]),
+                "name": str(match[0][2]),
+                "title": str(match[0][3]),
             },
             "noembed": {
                 "type": "normal",
-                "message": f'`[{str(match[0][1])}] {str(match[0][2])}`'
-            },
-        }
-    
-    # セキュアなLunachat対応コマンド
-    # secure Luna chat(You don't need this unless someone uses Japanese in your server)
-    match = re.findall("^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Async Chat Thread - #(.*)/INFO]: (.*): (.*)", text)
-    if len(match) :
-        print(str(match))
-        return {
-            "embed": {
-                "color": "#888",
-                "name": str(match[0][1]),
-                "title": str(match[0][2]),
-            },
-            "noembed": {
-                "type": "normal",
-                "message": f'`[{str(match[0][1])}] {str(match[0][2])}`'
+                "message": f'`[{str(match[0][2])}] {str(match[0][3])}`'
             },
         }
     
