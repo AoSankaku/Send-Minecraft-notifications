@@ -131,7 +131,7 @@ def SendMessage(message: dict) -> None:
         if embed_mode:
             main_content["username"] = sender_name
             main_content["avatar_url"] = sender_icon
-        requests.post(webhook_url, main_content)
+        requests.post(webhook_url, json=main_content)
     
     chat_count += 1
 
