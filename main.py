@@ -187,8 +187,8 @@ def MessageCreation(text: str):
         }
     # サーバー起動メッセージ
     # When your server is launched
-    match = re.findall(f"({prefix_wildcard_without_brackets})" + r"Done ", text) and status != "online"
-    if len(match) and server_start_message is not None and server_start_message != '' :
+    match = re.findall(f"({prefix_wildcard_without_brackets})" + r"Done ", text)
+    if len(match) and server_start_message is not None and server_start_message != '' and status != "online":
         status = "online"
         player_count = 0
         return {
