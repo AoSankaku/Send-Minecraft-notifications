@@ -125,7 +125,12 @@ def SendMessage(message: dict) -> None:
     else:
         # discord以外のサービスのwebhookの場合はここを変更してください
         # If you wish to use services other than discord, customize here based on your service:
-        main_content = {"content": message["message"]}
+        main_content = {
+            "content": message["message"],
+        }
+        if embed_mode:
+            main_content["username"] = sender_name
+            main_content["avatar_url"] = sender_icon
         requests.post(webhook_url, main_content)
     
     chat_count += 1
