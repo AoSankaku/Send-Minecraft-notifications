@@ -280,8 +280,7 @@ def MessageCreation(text: str):
             "embed": {
                 "color": "#888",
                 "name": server_console_name,
-                "title": str(match[0][2]),
-                "desc": str(match[0][3]),
+                "title": str(match[0][3]),
             },
             "noembed": {
                 "type": "normal",
