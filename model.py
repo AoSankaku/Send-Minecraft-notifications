@@ -13,3 +13,5 @@ class MessageData:
     msg_type: MessageType
     color: str
     text: str
+    playerId: str | None = None
+    event_id: str = ''
