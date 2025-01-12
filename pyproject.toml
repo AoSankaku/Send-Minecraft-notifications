@@ -1,5 +1,5 @@
 [project]
-name = "send-minecraft-notifications"
+name = "smn"
 version = "0.1.0"
 description = "Let's send your minecraft chat to discord!"
 readme = "README.md"

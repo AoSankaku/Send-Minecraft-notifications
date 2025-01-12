@@ -1,6 +1,6 @@
 import structlog
-from parser import LogParser
-from model import MessageData, MessageType
+from message.parser import LogParser
+from message.model import MessageData, MessageType
 
 parser = LogParser()
 

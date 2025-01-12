@@ -1,5 +1,6 @@
 import dataclasses
 from enum import StrEnum
+from message.constant import EventIds
 
 
 class MessageType(StrEnum):
@@ -14,4 +15,4 @@ class MessageData:
     color: str
     text: str
     playerId: str | None = None
-    event_id: str = ''
+    event_id: EventIds = ''
