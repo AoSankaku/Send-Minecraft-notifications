@@ -182,5 +182,5 @@ class LogParser(RegexParser):
         self.addPrefiedRule(
             EventIds.ON_DEATH,
             r"(.*) (was|died|drown|withered|experienced|blew|hit|fell|went|walked|burned|tried|discovered|froze|starved|suffocated|left) (.*)",
-            lambda x: MessageData(MessageType.Player, "#f8f", f":skull_crossbones: 死んでしまいました。助けに行ってあげよう！ (x:{str(x[0][1])}/y:{str(x[0][2])}/z:{str(x[0][3])})", str(x[0][1])) # Todo: check this one is working?
+            lambda x: MessageData(MessageType.Player, "#f8f", f":skull_crossbones: 死んでしまいました。助けに行ってあげよう！ (x:{str(x[0][1])}/y:{str(x[0][2])}/z:{str(x[0][3])})", str(x[0][1]))
         )

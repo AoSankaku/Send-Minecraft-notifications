@@ -1,3 +1,4 @@
+import copy
 import time
 import structlog
 import asyncio

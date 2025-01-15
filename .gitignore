@@ -7,3 +7,7 @@ id.txt
 .venv/
 plugins/
 **/__pycache__/
+build/
+dist/
+wheels/
+*.egg-info
