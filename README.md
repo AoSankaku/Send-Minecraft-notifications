@@ -62,18 +62,18 @@ Minecraftのサーバーのログの差分を取得し、それを元にWebHook�
 Microsoft Storeからも入ると思いますので適当に最新版をインストールしてください。
 
 #### Watchdog(Pythonライブラリ)
-「Windowsキー」を押しながら「R」を押すと出てくる画面に```cmd```と入れてEnterを押してください。
+Windowsの場合は「Windowsキー」を押しながら「R」を押すと出てくる画面に```cmd```と入れてEnterを押してください。
+
+> [!IMPORTANT]
+> 仮想環境の場合、先に仮想環境に入ってから次に進んでください。
 
 その後出てきた黒い画面に、
 
 ```cmd
-pip install watchdog
+pip install -r requirements.txt
 ```
 
 と入力してください。実行場所はどこでも構いません（前もってcd=ディレクトリ変更 する必要はありません）。
-
-> [!IMPORTANT]
-> お使いの環境に応じて、他にもpythonライブラリのインストールが必要なことがあります。各自インストールしてください。
 
 #### .env.exampleのリネーム
 `.env.example`を`.env`にリネームする必要があります。Linuxを使っている人はこのファイルが有るところまでcdして、`mv .env.example .env`を実行してください。
