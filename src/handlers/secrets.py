@@ -1,6 +1,6 @@
 import os
 
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 from enum import StrEnum
 from typing import Self
 
@@ -13,9 +13,9 @@ def _is_bool_str(s: str) -> bool:
 _env_data: dict[str, str] = {}
 
 
-def _loadEnvWithValidate(name: Self):
+def _loadEnvWithValidate(name: Self, values: dict[str, str | None]):
     # Get value from os enriron
-    _v = os.getenv(name)
+    _v = values[name]
 
     if _v is None:
         _default = _get_default(name)
@@ -82,11 +82,9 @@ class BotEnv(StrEnum):
 
     @staticmethod
     def init():
-        if not load_dotenv(".env"):
-            raise RuntimeError("Failed to load .env file")
-        # Load required envs
+        values = dotenv_values(".env")
         for _e in BotEnv:
-            _loadEnvWithValidate(_e)
+            _loadEnvWithValidate(_e, values)
 
     def getBool(self) -> bool:
         _s = _env_data[self.value]

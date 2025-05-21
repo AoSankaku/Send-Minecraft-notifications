@@ -4,7 +4,7 @@ import structlog
 import asyncio
 from utils.miscutil import convert_string_to_array
 from handlers.sender import MessageSender
-from handlers.webhook import DiscordWebhook
+from message.webhook import DiscordWebhook
 from handlers.secrets import BotEnv
 from handlers.message import MessageConverter
 from handlers.filechange import ChangeHandler

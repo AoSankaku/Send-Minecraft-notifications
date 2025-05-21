@@ -18,8 +18,8 @@ dependencies = [
     "python-dotenv==1.0.1",
     "requests==2.32.3",
     "urllib3==2.2.3",
-    "watchdog==6.0.0",
     "discord-py>=2.4.0",
     "structlog>=24.4.0",
     "toml>=0.10.2",
+    "watchfiles>=1.0.5",
 ]

@@ -2,8 +2,8 @@ from enum import StrEnum
 
 class EventIds(StrEnum):
     ON_JOIN = "on_join"
-    ON_JOIN_NON_WHITELISTED = "on_join_non_whitelisted"
     ON_LEFT = "on_left"
+    ON_JOIN_NON_WHITELISTED = "on_join_non_whitelisted"
     
     ON_SERVER_START = "on_server_start"
     ON_SERVER_STOP = "on_server_stop"

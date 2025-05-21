@@ -1,7 +1,7 @@
 import requests
 
 from utils.miscutil import hex_to_int
-from handlers.webhook import DiscordWebhook
+from message.webhook import DiscordWebhook
 
 class MessageSender:
     def __init__(self, webhook: DiscordWebhook, tips_messages: list[str], player_icon_api: str):
