@@ -85,16 +85,20 @@ class Server:
         if result == None:
             self.logger.debug("Ignore line", line=line)
             return
+
+        if result.msg_type == MessageType.Unknown:
+            self.logger.warn("Unknown message happened!", result=result)
+            return
+        
         self.on_event(result.event_id)
         result.text = self.replace_additional_data(result.text)
+        
         self.logger.debug("Sending", message=result.text)
         match result.msg_type:
             case MessageType.Player:
                 await self.webhook.sendPlayerMessage(result.text, result.playerId)
             case MessageType.Server | MessageType.System:
                 await self.webhook.sendServerMessage(result.text)
-            case MessageType.Unknown:
-                self.logger.warn("Unknown message happened!", result=result)
     
     def replace_additional_data(self, msg: str) -> str:
         return msg.replace("%server-count%", str(self.player_count))
