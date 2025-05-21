@@ -23,3 +23,7 @@ dependencies = [
     "toml>=0.10.2",
     "watchfiles>=1.0.5",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = "src"
+testpaths = ["src/tests"]
