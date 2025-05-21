@@ -78,7 +78,7 @@ class MessageConverter:
                     "name": str(match[0][1]),
                     "title": f"サーバーから退室しました。\n（現在 {player_count} 名）",
                 },
-                "noembed": { # TODO: fix this
+                "noembed": {
                     "type": "normal",
                     "name": str(match[0][1]),
                     "message": f":red_circle: {str(match[0][1])} が退出しました。（現在 {player_count} 名）",
