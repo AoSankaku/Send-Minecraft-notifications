@@ -1,3 +1,4 @@
+import random
 import logging
 import structlog
 from structlog.stdlib import BoundLogger
@@ -21,10 +22,11 @@ class Server:
             )
         )
         self.logger: BoundLogger = structlog.getLogger()
-        
         self.state: ServerState = ServerState.STARTING
         self.player_count: int = 0
         self.logutil: LogUtil = LogUtil()
+        self.send_count: int = 0
+        self.tips_messages: list[str] = []
         self.webhook: DiscordWebhook
         self.parser: LogParser
         self.i18n: I18n
@@ -34,6 +36,8 @@ class Server:
         self.logger.info("Initializing now...")
         
         BotEnv.init()
+        for _m in BotEnv.TipsMessages.get()[1:-1].split(","):
+            self.tips_messages.append(_m[1:-1])
         self.logger.info("Environment variables loaded.")
         
         self.i18n = I18n()
@@ -99,6 +103,8 @@ class Server:
                 await self.webhook.sendPlayerMessage(result.text, result.playerId)
             case MessageType.Server | MessageType.System:
                 await self.webhook.sendServerMessage(result.text)
+        
+        await self.on_after_send(result.event_id)
     
     def replace_additional_data(self, msg: str) -> str:
         return msg.replace("%server-count%", str(self.player_count))
@@ -117,3 +123,16 @@ class Server:
                 self.round_player_count()
             case EventIds.ON_SERVER_START:
                 self.player_count = 0
+    
+    async def on_after_send(self, event_id: str):
+        if self.send_count >= 16:
+            self.send_count = 0
+            msg = self.i18n.translate(EventIds.PLAYER_COUNT_NOTIFY)
+            if msg == None:
+                self.logger.warn(f"Failed to send player count notify because of translation missing (key:{EventIds.PLAYER_COUNT_NOTIFY})")
+            else:
+                msg = self.replace_additional_data(msg)
+                await self.webhook.sendServerMessage(msg)
+        if self.send_count%8 == 0 and self.send_count > 0:
+            await self.webhook.sendServerMessage(random.choice(self.tips_messages))
+        self.send_count += 1

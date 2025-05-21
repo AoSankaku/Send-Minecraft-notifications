@@ -12,5 +12,6 @@
     "on_goal_complete": ":checkered_flag: 目標%goal-name%を達成しました！",
     "on_challenge_complete": ":trophy: 進捗%challenge-name%を達成しました！",
     "on_achievements_complete_old": ":military_metal: 挑戦%challenge-name%を達成しました！",
-    "on_chat_from_lunachat": "`%player-message%`"
+    "on_chat_from_lunachat": "`%player-message%`",
+    "player_count_notify": ":information_source: 現在サーバーにいるプレイヤーは %server-count% 人です。みんな待ってるよ:eyes:"
 }

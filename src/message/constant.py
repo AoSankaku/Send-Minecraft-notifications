@@ -23,3 +23,6 @@ class EventIds(StrEnum):
     
     # integrations
     ON_CHAT_FROM_LUNACHAT = "on_chat_from_lunachat"
+    
+    # Other
+    PLAYER_COUNT_NOTIFY = "player_count_notify"
