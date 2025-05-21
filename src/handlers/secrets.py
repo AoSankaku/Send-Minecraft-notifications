@@ -63,6 +63,9 @@ class BotEnv(StrEnum):
     PluginDir = "PLUGIN_DIR"
     OtherIgnoreNames = "IGNORE_NAMES"
     KillAfterClosed = "KILL_AFTER_CLOSED"
+    
+    # Webhook icon
+    DefaultServerConsolePic = "DEFAULT_SERVER_CONSOLE_PIC"
 
     # Server Message
     ServerStartMessage = "SERVER_START_MESSAGE"
