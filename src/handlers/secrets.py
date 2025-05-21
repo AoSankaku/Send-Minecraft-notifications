@@ -64,8 +64,9 @@ class BotEnv(StrEnum):
     OtherIgnoreNames = "IGNORE_NAMES"
     KillAfterClosed = "KILL_AFTER_CLOSED"
     
-    # Webhook icon
-    DefaultServerConsolePic = "DEFAULT_SERVER_CONSOLE_PIC"
+    # Webhook
+    SenderName = "SENDER_NAME"
+    SenderIcon = "SENDER_ICON"
 
     # Server Message
     ServerStartMessage = "SERVER_START_MESSAGE"

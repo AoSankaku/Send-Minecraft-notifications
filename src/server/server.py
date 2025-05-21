@@ -48,7 +48,8 @@ class Server:
         self.webhook = DiscordWebhook(
             BotEnv.WebhookUrl.get(),
             BotEnv.PlayerIconApi.get(),
-            BotEnv.DefaultServerConsolePic.get()
+            BotEnv.SenderName.get(),
+            BotEnv.SenderIcon.get()
         )
         self.logger.info("Webhook initialized.")
         
@@ -134,5 +135,5 @@ class Server:
                 msg = self.replace_additional_data(msg)
                 await self.webhook.sendServerMessage(msg)
         if self.send_count%8 == 0 and self.send_count > 0:
-            await self.webhook.sendServerMessage(random.choice(self.tips_messages))
+            await self.webhook.sendServerMessage(BotEnv.TipsPrefix.get() + random.choice(self.tips_messages))
         self.send_count += 1
