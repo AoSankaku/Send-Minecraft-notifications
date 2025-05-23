@@ -4,4 +4,10 @@ node_modules
 test.py
 .env
 id.txt
-venv
+.venv/
+plugins/
+**/__pycache__/
+build/
+dist/
+wheels/
+*.egg-info

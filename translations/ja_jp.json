@@ -1,0 +1,17 @@
+{
+    "on_join": ":green_circle: %player-name% が参加しました。一緒に遊んであげよう！（現在 %server-count% 名）",
+    "on_left": ":red_circle: %player-name% が退出しました。（現在 %server-count% 名）",
+    "on_join_non_whitelisted": ":yellow_circle: %player-name% がサーバーに入ろうとしましたが、ホワイトリストに入っていません！",
+    "on_console_chat": "`%player-message%`",
+    "on_secure_chat": "`%player-message%`",
+    "on_secure_chat_other": "`%player-message%`",
+    "on_non_secure_chat": "`%player-message%`",
+    "on_death": ":skull_crossbones: 死んでしまいました。助けに行ってあげよう！ (x:%death-x%/y:%death-y%/z:%death-z%)",
+    "on_recalc_player_count": ":information_source: 現在サーバーにいるプレイヤーは %server-count% 人です。（上限 %server-max-player% 名）",
+    "on_advancement_complete": ":trophy: 進捗%advancement-name%を達成しました！",
+    "on_goal_complete": ":checkered_flag: 目標%goal-name%を達成しました！",
+    "on_challenge_complete": ":trophy: 進捗%challenge-name%を達成しました！",
+    "on_achievements_complete_old": ":military_metal: 挑戦%challenge-name%を達成しました！",
+    "on_chat_from_lunachat": "`%player-message%`",
+    "player_count_notify": ":information_source: 現在サーバーにいるプレイヤーは %server-count% 人です。みんな待ってるよ:eyes:"
+}
