@@ -1,4 +1,5 @@
 import os
+from os import path
 
 from dotenv import dotenv_values
 from enum import StrEnum
@@ -86,7 +87,10 @@ class BotEnv(StrEnum):
 
     @staticmethod
     def init():
-        values = dotenv_values(".env")
+        if(path.exists(".env")):
+            values = dotenv_values(".env")
+        else:
+            values = os.environ
         for _e in BotEnv:
             _loadEnvWithValidate(_e, values)
 
