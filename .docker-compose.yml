@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   log_notify:
-    image: smnf
+    image: ghcr.io/aosankaku/send-minecraft-notifications:latest
     volumes:
       - type: bind
         source: ./logs
