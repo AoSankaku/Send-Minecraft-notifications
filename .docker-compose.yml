@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  log_notify:
+    image: smnf
+    volumes:
+      - type: bind
+        source: ./logs
+        target: /logs
+    environment:
+      WEBHOOK_URL: 'https://discord.com/api/webhooks/PASTE_YOUR_WEBHOOK_URL_HERE'
+      TARGET_DIR: '/logs/'
+      TARGET_FILE: 'latest.log'
+      PLUGIN_DIR: './plugins'
+      IGNORE_NAMES: '["ChunkTaskScheduler", "ChunkHolderManager", "BE", "Simple_Harvest", "Dynmap", "Nbt Crafting", "STDOUT", "Chunky"]'
+      KILL_AFTER_CLOSED: true
+      RESTART_ANNOUNCEMENT_MESSAGE: 'Restarting in 60 seconds!'
+      SERVER_START_MESSAGE: '==================================>\n:door: **【サーバーがオンラインになりました！】**\n==================================>'
+      SERVER_STOP_MESSAGE: '==================================>\n:no_entry_sign: **【サーバーがオフラインになりました。】**\n==================================>'
+      SERVER_RESTART_MESSAGE: '==================================>\n:recycle: サーバーの再起動を行っています。これには時間がかかる場合があります。\n==================================>'
+      EMBED_MODE: false
+      SENDER_NAME: 'My Minecraft Bot'
+      SENDER_ICON: ''
+      PLAYER_ICON_API: 'https://mineskin.eu/helm/'
+      TIPS_PREFIX: ':information_source: '
+      TIPS_MESSAGES: '["このサーバーはXXXが運営しています！","建築メンバーを募集中です！","入れてほしいMODがあったら教えてください！"]'

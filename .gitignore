@@ -11,3 +11,5 @@ build/
 dist/
 wheels/
 *.egg-info
+logs/
+docker-compose.yml
