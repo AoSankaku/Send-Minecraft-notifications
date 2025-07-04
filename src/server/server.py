@@ -4,6 +4,7 @@ import structlog
 from structlog.stdlib import BoundLogger
 from watchfiles import awatch
 from os import path
+import asyncio
 
 from message.parser import LogParser
 from message.webhook import DiscordWebhook
