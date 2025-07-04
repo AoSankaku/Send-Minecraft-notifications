@@ -99,7 +99,7 @@ class Server:
             return
         
         self.on_event(result.event_id)
-        result.text = self.replace_additional_data(result.text).removeprefix(" ")
+        result.text = self.replace_additional_data(result.text)
         
         self.logger.debug("Sending", message=result.text)
         match result.msg_type:

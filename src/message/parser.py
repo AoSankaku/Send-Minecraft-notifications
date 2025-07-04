@@ -111,17 +111,17 @@ class LogParser(RegexParser):
         # player chat handling
         self.addPrefiedRule(
             EventIds.ON_SECURE_CHAT,
-            r"^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Async Chat Thread - #(.*)/INFO]: <(.*?)>(.*)",
+            r"^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Async Chat Thread - #(.*)/INFO]: <(.*?)>\s*(.*)",
             lambda msg, x: MessageData(MessageType.Player, "#888", msg.replace("%player-message%", str(x[0][2])), str(x[0][1]))
         )
         self.addPrefiedRule(
             EventIds.ON_SECURE_CHAT_OTHER,
-            r"<(.*?)>(.*)",
+            r"<(.*?)>\s*(.*)",
             lambda msg, x: MessageData(MessageType.Player, "#888", msg.replace("%player-message%", str(x[0][2])), str(x[0][1]))
         )
         self.addPrefiedRule(
             EventIds.ON_NON_SECURE_CHAT,
-            r"^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Async Chat Thread - #(.*)/INFO]: \[(.*?)] <(.*)>(.*)",
+            r"^\[[0-9]{2}:[0-9]{2}:[0-9]{2}] \[Async Chat Thread - #(.*)/INFO]: \[(.*?)] <(.*)>\s*(.*)",
             lambda msg, x: MessageData(MessageType.Player, "#888", msg.replace("%player-message%", str(x[0][3])), str(x[0][2]))
         )
         
