@@ -5,6 +5,7 @@ test.py
 .env
 id.txt
 .venv/
+venv/
 plugins/
 **/__pycache__/
 build/
