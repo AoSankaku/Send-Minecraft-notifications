@@ -71,20 +71,18 @@ class Server:
     
     async def shutdown(self):
         self.logger.info("Gracefully shutting down...")
-        
+        if self.webhook:
+            await self.webhook.onClose()
         self.logger.info("See you!")
     
     async def listen_file_change(self):
-        try:
-            async for changes in awatch(BotEnv.TargetDir.get(), recursive=True):
-                for change in changes:
-                    filepath = change[1]
-                    filename = path.basename(filepath)
-                    if filename == BotEnv.TargetFile.get():
-                        for line in self.logutil.get_log_diff(filepath):
-                            await self.on_line_added(line)
-        except KeyboardInterrupt:
-            self.logger.info("Ctrl-C detected!")
+        async for changes in awatch(BotEnv.TargetDir.get(), recursive=True):
+            for change in changes:
+                filepath = change[1]
+                filename = path.basename(filepath)
+                if filename == BotEnv.TargetFile.get():
+                    for line in self.logutil.get_log_diff(filepath):
+                        await self.on_line_added(line)
     
     async def on_line_added(self, line: str):
         result = self.parser.parse(line, self.i18n)
