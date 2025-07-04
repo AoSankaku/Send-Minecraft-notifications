@@ -1,5 +1,6 @@
 from discord import Webhook
 import aiohttp
+from urllib.parse import urljoin
 
 
 class DiscordWebhook:
@@ -27,7 +28,10 @@ class DiscordWebhook:
 
     async def sendPlayerMessage(self, msg: str, userid: str):
         await self.webhook.send(
-            msg, avatar_url=self.avatar_url_base + userid, username=userid, tts=False
+            msg,
+            avatar_url=urljoin(self.avatar_url_base, userid),
+            username=userid,
+            tts=False,
         )
 
     async def sendServerMessage(self, msg: str):
