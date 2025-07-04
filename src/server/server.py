@@ -37,8 +37,9 @@ class Server:
         self.logger.info("Initializing now...")
         
         BotEnv.init()
-        for _m in BotEnv.TipsMessages.get()[1:-1].split(","):
-            self.tips_messages.append(_m[1:-1])
+        raw_tips = BotEnv.TipsMessages.get()
+        inner_content = raw_tips.strip('[]')
+        self.tips_messages = [tip.strip().strip('"') for tip in inner_content.split(',')]
         self.logger.info("Environment variables loaded.")
         
         self.i18n = I18n()
