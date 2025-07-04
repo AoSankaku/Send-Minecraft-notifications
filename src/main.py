@@ -7,6 +7,8 @@ async def main():
     try:
         server.init()
         await server.listen_file_change()
+    except KeyboardInterrupt:
+        pass  # Suppress the default traceback
     except Exception as e:
         error_message = traceback.format_exc()
         print(error_message)

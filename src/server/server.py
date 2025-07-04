@@ -67,9 +67,10 @@ class Server:
         self.logger.info("Logfile loaded.")
         
         self.logger.info("Initialization completed!")
+        self.logger.info("Press Ctrl+C to shut down the script")
     
     async def shutdown(self):
-        self.logger.info("Shutting down now...")
+        self.logger.info("Gracefully shutting down...")
         
         self.logger.info("See you!")
     
