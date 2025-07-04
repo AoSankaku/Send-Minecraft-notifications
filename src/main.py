@@ -15,7 +15,7 @@ async def main():
         if server.webhook:
             await server.webhook.sendServerMessage(f"An unexpected error occurred:\n```\n{error_message}```")
     finally:
-        server.shutdown()
+        await server.shutdown()
 
 if __name__ == "__main__":
     asyncio.run(main())
