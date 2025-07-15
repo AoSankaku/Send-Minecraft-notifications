@@ -1,9 +1,7 @@
-from discord import Webhook, HTTPException
+from discord import Webhook, HTTPException, NotFound, Forbidden
 import aiohttp
 from urllib.parse import urljoin
 import asyncio
-import sys
-import os
 import structlog
 
 
@@ -23,11 +21,12 @@ class DiscordWebhook:
         self.avatar_url_base: str = avatar_url_base
         self.server_webhook_name = server_webhook_name
         self.server_console_pic = server_console_pic
-        self.logger = structlog.get_logger()
+        self.logger: structlog.stdlib.BoundLogger = structlog.get_logger()
 
     async def _send_with_retry(self, *args, **kwargs):
         max_retries = 5
         retry_delay = 10  # seconds
+        msg = args[0]
 
         for attempt in range(max_retries):
             try:
@@ -39,21 +38,32 @@ class DiscordWebhook:
                     status=e.status,
                     code=e.code,
                     text=e.text,
+                    msg=msg,
                     attempt=attempt + 1,
                     max_retries=max_retries,
                 )
-                if attempt < max_retries - 1:
-                    await asyncio.sleep(retry_delay)
-                    retry_delay *= 2  # Exponential backoff
-                else:
-                    self.logger.error("All retries failed. Crashing the script.")
-                    await self.onClose()
-                    raise RuntimeError(
-                        f"Discord API request failed after {max_retries} retries. Final error: {e.text}"
-                    ) from e
+                raise
+            except TypeError or ValueError as e:
+                self.logger.warn(
+                    "Error happened about embed processing...",
+                    text=str(e),
+                    msg=msg,
+                    attempt=attempt + 1,
+                    max_retries=max_retries,
+                )
+                raise
             except Exception:
                 self.logger.error("An unexpected error occurred during webhook send", exc_info=True)
-                raise
+                
+            if attempt < max_retries - 1:
+                await asyncio.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+            else:
+                self.logger.error("All retries failed. Crashing the script.")
+                await self.onClose()
+                raise RuntimeError(
+                    f"Discord API request failed after {max_retries} retries."
+                )
 
     async def onClose(self):
         await self.aiohttp_session.close()
