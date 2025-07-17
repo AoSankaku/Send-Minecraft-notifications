@@ -46,7 +46,10 @@ class DiscordWebhook:
                     await asyncio.sleep(retry_delay)
                     retry_delay *= 2  # Exponential backoff
                 else:
-                    self.logger.error("All retries failed. Crashing the script.")
+                    self.logger.error(
+                        "All retries failed. Crashing the script.",
+                        failed_message=args[0],
+                    )
                     await self.onClose()
                     raise RuntimeError(
                         f"Discord API request failed after {max_retries} retries. Final error: {e.text}"
