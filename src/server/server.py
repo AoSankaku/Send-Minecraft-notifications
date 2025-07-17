@@ -14,6 +14,7 @@ from message.i18n import I18n
 from utils.logutil import LogUtil
 from handlers.secrets import BotEnv
 from server.state import ServerState
+from server.script_state import ScriptState
 
 class Server:
     def __init__(self, debug_mode: bool = False):
@@ -24,6 +25,7 @@ class Server:
         )
         self.logger: BoundLogger = structlog.getLogger()
         self.state: ServerState = ServerState.STARTING
+        self.script_state: ScriptState = ScriptState.RUNNING
         self.player_count: int = 0
         self.logutil: LogUtil = LogUtil()
         self.send_count: int = 0
@@ -72,10 +74,14 @@ class Server:
         self.logger.info("Press Ctrl+C to shut down the script")
     
     async def shutdown(self):
-        self.logger.info("Gracefully shutting down...")
+        if self.script_state != ScriptState.CRASHED:
+            self.logger.info("Gracefully shutting down...")
         if self.webhook:
             await self.webhook.onClose()
         self.logger.info("See you!")
+
+    async def crash(self):
+        self.script_state = ScriptState.CRASHED
     
     async def listen_file_change(self):
         try:

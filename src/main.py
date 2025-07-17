@@ -10,6 +10,7 @@ async def main():
     except KeyboardInterrupt:
         pass  # Suppress the default traceback
     except Exception as e:
+        await server.crash()
         error_message = traceback.format_exc()
         print(error_message)
         if server.webhook:
