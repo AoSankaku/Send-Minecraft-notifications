@@ -101,15 +101,13 @@ class Server:
             self.logger.debug("Ignore line", line=line)
             return
 
-        if result.event_id == EventIds.ON_SERVER_STOP and self.state == ServerState.RESTARTING:
-            self.logger.debug("Suppressed server stop message due to server restart")
+        if not self.on_event(result.event_id):
             return
 
         if result.msg_type == MessageType.Unknown:
             self.logger.warn("Unknown message happened!", result=result)
             return
         
-        self.on_event(result.event_id)
         result.text = self.replace_additional_data(result.text)
         
         self.logger.debug("Sending", message=result.text)
@@ -128,7 +126,17 @@ class Server:
         if self.player_count < 0:
             self.player_count = 0
     
-    def on_event(self, event_id: str):
+    def on_event(self, event_id: str) -> bool:
+        # Returns False if the event should be suppressed
+        if event_id == EventIds.ON_SERVER_STOP:
+            if self.state == ServerState.RESTARTING:
+                self.logger.debug("Suppressed server stop message due to server restart")
+                return False
+            if self.state == ServerState.STOPPED:
+                self.logger.debug("Suppressed duplicate server stop message")
+                return False
+            self.state = ServerState.STOPPED
+
         match event_id:
             case EventIds.ON_JOIN:
                 self.round_player_count()
@@ -141,6 +149,8 @@ class Server:
                 self.state = ServerState.STARTED
             case EventIds.ON_SERVER_RESTART:
                 self.state = ServerState.RESTARTING
+        
+        return True
     
     async def on_after_send(self, event_id: str):
         if self.send_count >= 16:
