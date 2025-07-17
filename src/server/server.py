@@ -101,6 +101,10 @@ class Server:
             self.logger.debug("Ignore line", line=line)
             return
 
+        if result.event_id == EventIds.ON_SERVER_STOP and self.state == ServerState.RESTARTING:
+            self.logger.debug("Suppressed server stop message due to server restart")
+            return
+
         if result.msg_type == MessageType.Unknown:
             self.logger.warn("Unknown message happened!", result=result)
             return
@@ -134,6 +138,9 @@ class Server:
                 self.round_player_count()
             case EventIds.ON_SERVER_START:
                 self.player_count = 0
+                self.state = ServerState.STARTED
+            case EventIds.ON_SERVER_RESTART:
+                self.state = ServerState.RESTARTING
     
     async def on_after_send(self, event_id: str):
         if self.send_count >= 16:
