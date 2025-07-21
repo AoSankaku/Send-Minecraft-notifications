@@ -34,18 +34,19 @@ class DiscordWebhook:
                 return  # Success
             except HTTPException as e:
                 self.logger.warn(
-                    "Discord API request failed, retrying...",
+                    "Discord API request failed.",
                     status=e.status,
                     code=e.code,
                     text=e.text,
                     msg=msg,
                     attempt=attempt + 1,
                     max_retries=max_retries,
+                    avatar_url=kwargs["avatar_url"]
                 )
                 raise
             except TypeError or ValueError as e:
                 self.logger.warn(
-                    "Error happened about embed processing...",
+                    "Error happened about embed processing.",
                     text=str(e),
                     msg=msg,
                     attempt=attempt + 1,

@@ -15,4 +15,4 @@ class MessageData:
     color: str
     text: str
     playerId: str | None = None
-    event_id: EventIds = ''
+    event_id: EventIds = EventIds.NONE

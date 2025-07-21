@@ -53,7 +53,9 @@ parser = LogParser(
     ],
 )
 def test_each_event_runs_exactly_forge(case: tuple[EventIds, str]):
-    assert parser.parse(case[1]).event_id == case[0]
+    result = parser.parse(case[1])
+    assert result
+    assert result.event_id == case[0]
 
 
 @pytest.mark.parametrize(
@@ -80,4 +82,6 @@ def test_each_event_runs_exactly_forge(case: tuple[EventIds, str]):
     ],
 )
 def test_each_kill_types(case: str):
-    assert parser.parse(case).event_id == EventIds.ON_DEATH
+    result = parser.parse(case)
+    assert result
+    assert result.event_id == EventIds.ON_DEATH

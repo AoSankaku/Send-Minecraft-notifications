@@ -1,6 +1,7 @@
 from enum import StrEnum
 
 class EventIds(StrEnum):
+    NONE = ""
     ON_JOIN = "on_join"
     ON_LEFT = "on_left"
     ON_JOIN_NON_WHITELISTED = "on_join_non_whitelisted"
