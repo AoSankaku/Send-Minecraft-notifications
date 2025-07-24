@@ -141,9 +141,11 @@ class Server:
             case EventIds.ON_JOIN:
                 self.round_player_count()
                 self.player_count += 1
+                self.send_count = 0
             case EventIds.ON_LEFT:
                 self.player_count -= 1
                 self.round_player_count()
+                self.send_count = 0
             case EventIds.ON_SERVER_START:
                 self.player_count = 0
                 self.state = ServerState.STARTED
