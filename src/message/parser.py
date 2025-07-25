@@ -81,7 +81,7 @@ class LogParser(RegexParser):
         # player issue command
         self.addPrefiedRule(
             EventIds.ON_ISSUE_COMMAND,
-            r"\[(.*?): (.*?)]",
+            r"\[(.*?): (.*?)]$",
             lambda msg, x: MessageData(MessageType.Server, "#888", msg.replace("%player-message%", str(x[0][2])))
         )
         
