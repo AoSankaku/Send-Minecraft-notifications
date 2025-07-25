@@ -15,6 +15,7 @@ class EventIds(StrEnum):
     ON_SECURE_CHAT_OTHER = "on_secure_chat_other"
     ON_NON_SECURE_CHAT = "on_non_secure_chat"
     
+    ON_ISSUE_COMMAND = "on_issue_command"
     ON_DEATH = "on_death"
     ON_RECALC_PLAYER_COUNT = "on_recalc_player_count"
     ON_ADVANCEMENT_COMPLETE = "on_advancement_complete"

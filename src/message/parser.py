@@ -77,6 +77,13 @@ class LogParser(RegexParser):
         ignore_names: list[str]
     ):
         super().__init__()
+
+        # player issue command
+        self.addPrefiedRule(
+            EventIds.ON_ISSUE_COMMAND,
+            r"^\[.*] \[Server thread/INFO] \[net.minecraft.server.MinecraftServer/]: \[(.*?): (.*?)]",
+            lambda msg, x: MessageData(MessageType.Server, "#888", msg.replace("%player-message%", str(x[0][1])), str(x[0][0]))
+        )
         
         # player join & left
         # Todo: player count impl on sender & replace "#server_count" with server player count

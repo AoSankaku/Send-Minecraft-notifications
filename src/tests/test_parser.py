@@ -11,6 +11,10 @@ parser = LogParser(
     "case",
     [
         (
+            EventIds.ON_ISSUE_COMMAND,
+            "[257月2025 18:27:05.061] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: [user: Killed user]"
+        ),
+        (
             EventIds.ON_JOIN,
             "[01Dec2024 16:07:10.209] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: user joined the game",
         ),

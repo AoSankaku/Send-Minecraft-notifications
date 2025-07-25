@@ -1,4 +1,5 @@
 {
+    "on_issue_command": ":keyboard: コマンドを実行しました： `%player-message%` ",
     "on_join": ":green_circle: %player-name% が参加しました。一緒に遊んであげよう！（現在 %server-count% 名）",
     "on_left": ":red_circle: %player-name% が退出しました。（現在 %server-count% 名）",
     "on_join_non_whitelisted": ":yellow_circle: %player-name% がサーバーに入ろうとしましたが、ホワイトリストに入っていません！",
