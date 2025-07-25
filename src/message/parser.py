@@ -151,8 +151,8 @@ class LogParser(RegexParser):
         # re-calculate player count when "/list" command fired.
         self.addPrefiedRule(
             EventIds.ON_RECALC_PLAYER_COUNT,
-            r"There are ([0-9]*) of a max of ([0-9]*) players online:",
-            lambda msg, x: MessageData(MessageType.Server, "#f8f", msg.replace("%server-max-player%", str(x[0][2])))
+            r"There are ([0-9]*) of a max of ([0-9]*) players online:(.*)",
+            lambda msg, x: MessageData(MessageType.Server, "#f8f", msg.replace("%server-max-player%", str(x[0][2])), player_count=int(x[0][1]))
         )
         
         # advancements

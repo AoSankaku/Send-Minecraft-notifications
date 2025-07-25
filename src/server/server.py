@@ -104,6 +104,10 @@ class Server:
         if not self.on_event(result.event_id):
             return
 
+        if result.player_count is not None:
+            self.player_count = result.player_count
+            self.round_player_count()
+
         if result.msg_type == MessageType.Unknown:
             self.logger.warn("Unknown message happened!", result=result)
             return

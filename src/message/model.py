@@ -16,3 +16,4 @@ class MessageData:
     text: str
     playerId: str | None = None
     event_id: EventIds = EventIds.NONE
+    player_count: int | None = None
