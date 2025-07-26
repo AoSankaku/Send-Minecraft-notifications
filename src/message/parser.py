@@ -97,6 +97,11 @@ class LogParser(RegexParser):
             r"(.*) left the game",
             lambda msg, x: MessageData(MessageType.System, "#c00", msg.replace("%player-name%", str(x[0][1])))
         )
+        self.addPrefiedRule(
+            EventIds.ON_KICK,
+            r"Kicked (.*?): (.*)",
+            lambda msg, x: MessageData(MessageType.System, "#c00", msg.replace("%player-name%", str(x[0][1])).replace("%player-message%", str(x[0][2])))
+        )
         
         # server status
         self.addPrefiedRule(

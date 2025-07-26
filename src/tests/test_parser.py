@@ -23,6 +23,10 @@ parser = LogParser(
             "[01Dec2024 16:05:53.040] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: user left the game",
         ),
         (
+            EventIds.ON_KICK,
+            "[257月2025 18:49:20.767] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Kicked user: Kicked by an operator"
+        ),
+        (
             EventIds.ON_SERVER_START,
             '[03Nov2024 09:15:29.053] [Server thread/INFO] [net.minecraft.server.dedicated.DedicatedServer/]: Done (11.632s)! For help, type "help"',
         ),
