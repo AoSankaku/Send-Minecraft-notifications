@@ -23,7 +23,7 @@ class I18n:
             return True
         return False
 
-    def translate(self, event_id: EventIds) -> MessageData | None:
+    def translate(self, event_id: EventIds) -> str | None:
         if self.current_lang not in self.loaded_lang:
             return None
         return self.lang_data[self.current_lang].get(event_id.value, "")

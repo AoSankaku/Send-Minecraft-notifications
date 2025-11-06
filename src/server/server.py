@@ -117,7 +117,7 @@ class Server:
         self.logger.debug("Sending", message=result.text)
         match result.msg_type:
             case MessageType.Player:
-                await self.webhook.sendPlayerMessage(result.text, result.playerId)
+                await self.webhook.sendPlayerMessage(result.text, result.playerId or "Invalid userid")
             case MessageType.Server | MessageType.System:
                 await self.webhook.sendServerMessage(result.text)
         
