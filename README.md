@@ -69,7 +69,15 @@ uv sync --frozen --group build
 uv run python scripts/build_release.py
 ```
 
-生成物は `dist/release/` に作成されます。単体バイナリ、バイナリと README・LICENSE・`.env.example` をまとめた ZIP、SHA-256 チェックサムが入ります。`v*` タグを push すると Windows と Linux のビルド後に両方のアセットを含む Draft GitHub Release が作られます。管理者が内容を確認して公開してください。Actions から手動実行した場合は Actions artifact のみを作成します。
+生成物は `dist/release/` に作成されます。単体バイナリ、バイナリと README・LICENSE・`.env.example` をまとめた ZIP、SHA-256 チェックサムが入ります。
+
+## GitHub Actions による自動リリース
+
+リリースタグを GitHub に push すると、Windows x64 と Linux x64 のビルドが自動で実行されます。`1.2.3`・`v1.2.3` のどちらの形式も使えます。このリポジトリではすべてのタグをリリースとして扱います。タグの対象コミットに `.github/workflows/release.yml` が含まれている必要があります。
+
+両 OS のテスト・単体実行チェックが成功した後、成果物のチェックサムを検証し、実行ファイル・ZIP・チェックサムの計6ファイルを同じ GitHub Release へ添付して自動公開します。リリースノートも自動生成されます。アップロード完了までは Draft 状態を維持し、途中で失敗した場合は公開しません。再実行では途中の Draft を完成させ、公開済みのリリースの添付ファイルは変更しません。
+
+`1.2.3-rc.1`・`v1.2.3-beta.1` のようなタグは Prerelease として公開します。追加のトークン設定は不要で、公開ジョブに限定した `GITHUB_TOKEN` の `contents: write` 権限を使用します。Actions からの手動実行はビルドと Actions artifact の作成のみで、リリースは公開しません。
 
 ## English
 
@@ -78,6 +86,8 @@ Download the Windows x64 `.exe` or Linux x64 binary from [Releases](https://gith
 The Linux x64 binary has passed first-run setup and configuration smoke checks on Ubuntu 22.04 and 24.04 with Python removed from PATH. On Ubuntu Server, put it in a writable directory, run it once to create `.env`, edit `WEBHOOK_URL` and `TARGET_DIR`, then run `./send-minecraft-notifications-linux-x64 --check-config` before starting it again.
 
 For development, install Python 3.12 and uv, copy `.env.example` to `.env`, and set `WEBHOOK_URL` and `TARGET_DIR`. Then run `uv sync --frozen`, `uv run pytest`, and `uv run python src/main.py`. To make a local release build, run `uv sync --frozen --group build` followed by `uv run python scripts/build_release.py` on the target operating system.
+
+Pushing any release tag (for example `1.2.3` or `v1.2.3`) runs both platform builds and publishes one GitHub Release containing both binaries, ZIPs, and checksums after tests and asset verification succeed. The tagged commit must include the release workflow. Version tags with a suffix such as `-rc.1` publish a prerelease. Failed uploads remain drafts; reruns complete drafts while preserving published releases. Manual workflow runs create Actions artifacts only. No additional token is required.
 
 ## License
 

@@ -3,8 +3,12 @@ name: Build and release
 on:
   push:
     tags:
-      - "v*"
+      - "**"
   workflow_dispatch:
+
+concurrency:
+  group: standalone-release-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -62,14 +66,19 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  draft-release:
-    name: Assemble draft release
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+  release:
+    name: Publish release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      - name: Check out release scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
       - name: Download all platform assets
         uses: actions/download-artifact@v8
         with:
@@ -77,20 +86,13 @@ jobs:
           path: release-assets
           merge-multiple: true
 
-      - name: Create or update the draft release
+      - name: Test release publishing
+        run: python3 scripts/test_publish_release.py
+
+      - name: Verify assets and publish the release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG_NAME: ${{ github.ref_name }}
         shell: bash
-        run: |
-          set -euo pipefail
-          if gh release view "$TAG_NAME" --json isDraft --jq '.isDraft' > release-state.txt 2>/dev/null; then
-            if [ "$(cat release-state.txt)" != "true" ]; then
-              echo "Refusing to replace assets on an already published release." >&2
-              exit 1
-            fi
-            gh release upload "$TAG_NAME" release-assets/* --clobber
-          else
-            gh release create "$TAG_NAME" release-assets/* --verify-tag --draft --title "$TAG_NAME"
-          fi
+        run: bash scripts/publish_release.sh release-assets
