@@ -9,11 +9,24 @@ Minecraft サーバーのログを監視し、起動・終了、プレイヤー�
 3. `.env` の `WEBHOOK_URL` に Discord Webhook URL を、`TARGET_DIR` に Minecraft サーバーのログフォルダーを設定します。
 4. 実行ファイルを再起動します。
 
-Linux では実行権限を付けてから起動してください。
+Ubuntu Server では Linux x64 版をダウンロードし、設定を書き込めるフォルダーに置いてください。Python のインストールは不要です。実行権限を付けて起動すると `.env` が作られます。
 
 ```sh
 chmod +x ./send-minecraft-notifications-linux-x64
 ./send-minecraft-notifications-linux-x64
+```
+
+`.env` の `WEBHOOK_URL` と `TARGET_DIR` を編集した後、設定を検査して起動します。`TARGET_DIR` には実際のサーバーのログフォルダーを指定してください。
+
+```sh
+./send-minecraft-notifications-linux-x64 --check-config
+./send-minecraft-notifications-linux-x64
+```
+
+単体ファイルとチェックサムをダウンロードした場合は、実行前に次のコマンドで整合性を確認できます。ZIP をダウンロードしていなくても検査できます。
+
+```sh
+sha256sum --check --ignore-missing SHA256SUMS-linux-x64.txt
 ```
 
 必要に応じて設定ファイルの場所を `--config <path>` で指定できます。`--init-config` は設定雛形を作成し、`--check-config` は設定を検査します。たとえば、Windows では次のように実行します。
@@ -35,7 +48,7 @@ chmod +x ./send-minecraft-notifications-linux-x64
 
 ## 対応する配布ビルド
 
-現在のリリースビルドは Windows x64 と Ubuntu 22.04 x64 で作成します。Linux バイナリは glibc 2.35 以降を必要とします。ほかの OS、Linux ディストリビューション、CPU アーキテクチャでの互換性は保証していません。PyInstaller の one-file 実行ファイルは、起動時に内部ファイルを一時フォルダーへ展開します。
+現在のリリースビルドは Windows x64 と Ubuntu 22.04 x64 で作成します。Linux x64 版は Ubuntu 22.04・24.04 で、Python を PATH に含めない環境での初回起動・設定検査を確認しています。Linux バイナリは glibc 2.35 以降を必要とします。ほかの OS、Linux ディストリビューション、CPU アーキテクチャでの互換性は保証していません。PyInstaller の one-file 実行ファイルは、起動時に内部ファイルを一時フォルダーへ展開します。
 
 ## 開発者向け
 
@@ -61,6 +74,8 @@ uv run python scripts/build_release.py
 ## English
 
 Download the Windows x64 `.exe` or Linux x64 binary from [Releases](https://github.com/AoSankaku/Send-Minecraft-notifications/releases). The standalone binary does not require Python, and you can run it without extracting a ZIP. On first run it creates a `.env` template beside itself. Set `WEBHOOK_URL` and `TARGET_DIR`, then run it again. Relative `TARGET_DIR` values are resolved from the folder containing `.env`. On Linux, run `chmod +x <binary>` first. The Linux build requires glibc 2.35 or newer. Other operating systems and architectures are not currently supported release targets.
+
+The Linux x64 binary has passed first-run setup and configuration smoke checks on Ubuntu 22.04 and 24.04 with Python removed from PATH. On Ubuntu Server, put it in a writable directory, run it once to create `.env`, edit `WEBHOOK_URL` and `TARGET_DIR`, then run `./send-minecraft-notifications-linux-x64 --check-config` before starting it again.
 
 For development, install Python 3.12 and uv, copy `.env.example` to `.env`, and set `WEBHOOK_URL` and `TARGET_DIR`. Then run `uv sync --frozen`, `uv run pytest`, and `uv run python src/main.py`. To make a local release build, run `uv sync --frozen --group build` followed by `uv run python scripts/build_release.py` on the target operating system.
 
