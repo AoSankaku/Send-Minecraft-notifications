@@ -5,12 +5,15 @@ class LogUtil:
         self.prev: list[str] = []
     
     def load_to_prev(self, filepath: str):
-        with open(filepath, "r", errors="ignore") as f:
-            self.prev = f.readlines()
+        try:
+            with open(filepath, "r", encoding="utf-8", errors="replace") as f:
+                self.prev = f.readlines()
+        except FileNotFoundError:
+            self.prev = []
     
     def get_log_diff(self, filepath: str) -> list[str]:
         # 先に現在のログを取得（こっちを先にしないとずれる）
-        with open(filepath, "r", errors="ignore") as f:
+        with open(filepath, "r", encoding="utf-8", errors="replace") as f:
             log = f.readlines()
             # 前回のログを参照する
             oldLog = copy.deepcopy(self.prev)

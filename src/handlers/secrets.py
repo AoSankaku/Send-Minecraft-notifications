@@ -1,9 +1,15 @@
 import os
-from os import path
+import json
+import re
+from pathlib import Path
+from urllib.parse import urlsplit
 
 from dotenv import dotenv_values
 from enum import StrEnum
 from typing import Self
+
+from utils.miscutil import normalize_message_newlines
+from utils.runtime import default_config_path, resource_path
 
 
 def _is_bool_str(s: str) -> bool:
@@ -16,14 +22,13 @@ _env_data: dict[str, str] = {}
 
 def _loadEnvWithValidate(name: Self, values: dict[str, str | None]):
     # Get value from os enriron
-    _v = values[name]
+    _v = values.get(name)
 
     if _v is None:
         _default = _get_default(name)
         if _default is None:
             # If default value was not presented.
-            print(f"Failed to load env. name:{name}")
-            exit(1)
+            raise ValueError(f"Missing setting: {name.value}")
         else:
             print(f"[Warn] Fallback to default value. name:{name}")
             _v = _default
@@ -31,8 +36,7 @@ def _loadEnvWithValidate(name: Self, values: dict[str, str | None]):
     # Validation
     _v = _validate_env(name, _v)
     if _v is None:
-        print(f"Failed to validate env. name:{name}")
-        exit(1)
+        raise ValueError(f"Invalid setting: {name.value}")
 
     # Store env value
     _env_data[name.value] = _v
@@ -40,12 +44,35 @@ def _loadEnvWithValidate(name: Self, values: dict[str, str | None]):
 
 def _validate_env(name: Self, value: str) -> str | None:
     match name:
+        case BotEnv.WebhookUrl:
+            try:
+                url = urlsplit(value)
+            except ValueError:
+                return None
+            if (
+                url.scheme != "https"
+                or url.netloc not in (
+                    "discord.com", "discordapp.com", "ptb.discord.com", "canary.discord.com",
+                    "ptb.discordapp.com", "canary.discordapp.com",
+                )
+                or not re.fullmatch(r"/api/webhooks/[0-9]{17,20}/[A-Za-z0-9._-]{60,}", url.path)
+            ):
+                return None
         case BotEnv.KillAfterClosed:
             if not _is_bool_str(value):
                 return None
         case BotEnv.EmbedMode:
             if not _is_bool_str(value):
                 return None
+        case BotEnv.TipsMessages:
+            try:
+                tips = json.loads(value)
+            except (ValueError, TypeError):
+                return None
+            if not isinstance(tips, list) or not tips or not all(isinstance(tip, str) for tip in tips):
+                return None
+        case BotEnv.ServerStartMessage | BotEnv.ServerStopMessage | BotEnv.ServerRestartMessage | BotEnv.TipsPrefix:
+            return normalize_message_newlines(value)
     # finish
     return value
 
@@ -86,13 +113,19 @@ class BotEnv(StrEnum):
     PlayerIconApi = "PLAYER_ICON_API"
 
     @staticmethod
-    def init():
-        if(path.exists(".env")):
-            values = dotenv_values(".env")
-        else:
-            values = os.environ
+    def init(env_path: str | Path | None = None):
+        config_path = Path(env_path).resolve() if env_path is not None else default_config_path()
+        values = dict(dotenv_values(resource_path(".env.example"), encoding="utf-8"))
+        if config_path.is_file():
+            values.update(dotenv_values(config_path, encoding="utf-8-sig"))
+        values.update({name.value: os.environ[name.value] for name in BotEnv if name.value in os.environ})
+        _env_data.clear()
         for _e in BotEnv:
             _loadEnvWithValidate(_e, values)
+        for name in (BotEnv.TargetDir, BotEnv.PluginDir):
+            value = name.get()
+            if value:
+                _env_data[name.value] = str((config_path.parent / value).resolve())
 
     def getBool(self) -> bool:
         _s = _env_data[self.value]

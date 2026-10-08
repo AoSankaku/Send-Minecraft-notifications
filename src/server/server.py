@@ -5,6 +5,8 @@ from structlog.stdlib import BoundLogger
 from watchfiles import awatch
 from os import path
 import asyncio
+import json
+from pathlib import Path
 
 from message.parser import LogParser
 from message.webhook import DiscordWebhook
@@ -15,6 +17,8 @@ from utils.logutil import LogUtil
 from handlers.secrets import BotEnv
 from server.state import ServerState
 from server.script_state import ScriptState
+from utils.miscutil import normalize_message_newlines
+from utils.runtime import default_config_path, translation_path
 
 class Server:
     def __init__(self, debug_mode: bool = False):
@@ -30,23 +34,25 @@ class Server:
         self.logutil: LogUtil = LogUtil()
         self.send_count: int = 0
         self.tips_messages: list[str] = []
-        self.webhook: DiscordWebhook
+        self.webhook: DiscordWebhook | None = None
         self.parser: LogParser
         self.i18n: I18n
         pass
     
-    def init(self):
+    def init(self, config_path: Path | None = None):
         self.logger.info("Initializing now...")
         
-        BotEnv.init()
-        raw_tips = BotEnv.TipsMessages.get()
-        inner_content = raw_tips.strip('[]')
-        self.tips_messages = [tip.strip().strip('"') for tip in inner_content.split(',')]
+        config_path = config_path or default_config_path()
+        BotEnv.init(config_path)
+        self.tips_messages = [
+            normalize_message_newlines(tip) for tip in json.loads(BotEnv.TipsMessages.get())
+        ]
         self.logger.info("Environment variables loaded.")
         
         self.i18n = I18n()
         self.logger.info("Loading ja_jp lang...")
-        self.i18n.load_translation("ja_jp", "translations/ja_jp.json")
+        if not self.i18n.load_translation("ja_jp", str(translation_path(config_path))):
+            raise ValueError("Japanese translation file is missing.")
         self.logger.info("Translator initialized.")
         
         self.webhook = DiscordWebhook(
@@ -66,6 +72,7 @@ class Server:
         )
         self.logger.info("LogParser initialized.")
         
+        Path(BotEnv.TargetDir.get()).mkdir(parents=True, exist_ok=True)
         logfile_path = path.join(BotEnv.TargetDir.get(), BotEnv.TargetFile.get())
         self.logutil.load_to_prev(logfile_path)
         self.logger.info("Logfile loaded.")

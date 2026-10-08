@@ -1,4 +1,4 @@
-from discord import Webhook, HTTPException, NotFound, Forbidden
+from discord import AllowedMentions, Webhook, HTTPException
 import aiohttp
 from urllib.parse import urljoin
 import asyncio
@@ -27,6 +27,9 @@ class DiscordWebhook:
         max_retries = 5
         retry_delay = 10  # seconds
         msg = args[0]
+        # Enforce this at the shared send boundary, including every retry.
+        # Code fences are formatting, not protection against mention injection.
+        kwargs["allowed_mentions"] = AllowedMentions.none()
 
         for attempt in range(max_retries):
             try:
@@ -41,10 +44,10 @@ class DiscordWebhook:
                     msg=msg,
                     attempt=attempt + 1,
                     max_retries=max_retries,
-                    avatar_url=kwargs["avatar_url"]
+                    avatar_url=kwargs.get("avatar_url")
                 )
                 raise
-            except TypeError or ValueError as e:
+            except (TypeError, ValueError) as e:
                 self.logger.warn(
                     "Error happened about embed processing.",
                     text=str(e),

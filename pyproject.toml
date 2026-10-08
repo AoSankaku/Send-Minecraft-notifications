@@ -24,6 +24,9 @@ dependencies = [
     "watchfiles>=1.0.5",
 ]
 
+[dependency-groups]
+build = ["pyinstaller>=6.16,<7"]
+
 [tool.pytest.ini_options]
 pythonpath = "src"
 testpaths = ["src/tests"]

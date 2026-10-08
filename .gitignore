@@ -5,6 +5,11 @@ test.py
 .env
 id.txt
 .venv/
+.uv-cache/
+.setup.log
+.test-*.log
+.build.log
+.smoke-*.log
 venv/
 plugins/
 **/__pycache__/

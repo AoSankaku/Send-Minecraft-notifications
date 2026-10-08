@@ -1,7 +1,6 @@
 import json
 from os import path
 
-from message.model import MessageData
 from message.constant import EventIds
 
 class I18n:
@@ -14,10 +13,12 @@ class I18n:
     def load_translation(self, language_code: str, filepath: str) -> bool:
         if(path.exists(filepath)):
             data = None
-            with open(filepath) as f:
+            with open(filepath, encoding="utf-8") as f:
                 data = json.loads(f.read())
-            if data == None:
-                return False
+            if not isinstance(data, dict) or not all(
+                isinstance(key, str) and isinstance(value, str) for key, value in data.items()
+            ):
+                raise ValueError("Translation data must be an object containing string values.")
             self.lang_data[language_code] = data
             self.loaded_lang.append(language_code)
             return True
