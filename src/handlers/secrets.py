@@ -95,6 +95,7 @@ class BotEnv(StrEnum):
     # Webhook
     SenderName = "SENDER_NAME"
     SenderIcon = "SENDER_ICON"
+    SenderIconPlayer = "SENDER_ICON_PLAYER"
 
     # Server Message
     ServerStartMessage = "SERVER_START_MESSAGE"

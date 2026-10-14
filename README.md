@@ -46,6 +46,22 @@ sha256sum --check --ignore-missing SHA256SUMS-linux-x64.txt
 - `.env` のテンプレートで文字列として書いた `\n` は改行として送信されます。
 - メッセージテンプレートなど、追加の設定項目は `.env.example` を参照してください。使わない任意項目は初期値のままにできます。
 
+### システム通知のアイコン
+
+起動・終了、参加・退出、コンソールの発言、定期案内などのシステム・サーバー通知には、既定で自作の情報アイコン [info_icon_dot.png](assets/info_icon_dot.png) を使用します。特定プレイヤーのスキンを初期値には使用しません。画像はこのリポジトリの `main/assets/info_icon_dot.png` の固定Raw URLからDiscordが取得します。
+
+管理者は `.env` で次のように変更できます。優先順位は `SENDER_ICON`、`SENDER_ICON_PLAYER`、既定の情報アイコンの順です。
+
+| 設定 | 使用するアイコン |
+| --- | --- |
+| 両方空欄（または未設定） | 既定の情報アイコン |
+| `SENDER_ICON="https://example.com/icon.png"` | 指定した画像URL |
+| `SENDER_ICON=""` と `SENDER_ICON_PLAYER="PlayerName"` | 明示指定したMinecraftプレイヤーのアイコン（`PLAYER_ICON_API` を使用） |
+
+既存の `.env` にプレイヤーのスキンURLが設定されている場合、既定の情報アイコンへ切り替えるには `SENDER_ICON` を空欄にしてください。プレイヤー本人のチャットには引き続きそのプレイヤーのアイコンを使用します。設定を変更した後は通知プログラムを再起動してください。
+
+開発用の未公開ブランチでは、既定アイコンの画像を `main` に公開するまでRaw URLは利用できません。別の公開画像を使う場合は `SENDER_ICON` にそのURLを設定してください。
+
 ## 対応する配布ビルド
 
 現在のリリースビルドは Windows x64 と Ubuntu 22.04 x64 で作成します。Linux x64 版は Ubuntu 22.04・24.04 で、Python を PATH に含めない環境での初回起動・設定検査を確認しています。Linux バイナリは glibc 2.35 以降を必要とします。ほかの OS、Linux ディストリビューション、CPU アーキテクチャでの互換性は保証していません。PyInstaller の one-file 実行ファイルは、起動時に内部ファイルを一時フォルダーへ展開します。
@@ -84,6 +100,8 @@ uv run python scripts/build_release.py
 Download the Windows x64 `.exe` or Linux x64 binary from [Releases](https://github.com/AoSankaku/Send-Minecraft-notifications/releases). The standalone binary does not require Python, and you can run it without extracting a ZIP. On first run it creates a `.env` template beside itself. Set `WEBHOOK_URL` and `TARGET_DIR`, then run it again. Relative `TARGET_DIR` values are resolved from the folder containing `.env`. On Linux, run `chmod +x <binary>` first. The Linux build requires glibc 2.35 or newer. Other operating systems and architectures are not currently supported release targets.
 
 The Linux x64 binary has passed first-run setup and configuration smoke checks on Ubuntu 22.04 and 24.04 with Python removed from PATH. On Ubuntu Server, put it in a writable directory, run it once to create `.env`, edit `WEBHOOK_URL` and `TARGET_DIR`, then run `./send-minecraft-notifications-linux-x64 --check-config` before starting it again.
+
+System/server notifications use the original [info icon](assets/info_icon_dot.png) from this repository's fixed `main/assets/info_icon_dot.png` Raw URL by default; no player's skin is used as the default. Leave `SENDER_ICON` and `SENDER_ICON_PLAYER` empty or unset to use it. Administrators can set `SENDER_ICON` to a custom image URL, or leave it empty and set `SENDER_ICON_PLAYER` to a Minecraft player name to use that player's icon through `PLAYER_ICON_API`. An explicit image URL takes priority over a player name. Existing icon URLs remain supported; clear the old URL to switch to the default. Player chat continues to use each player's own icon. Restart the notifier after changing settings. The default image must be published to `main` before its Raw URL is available.
 
 For development, install Python 3.12 and uv, copy `.env.example` to `.env`, and set `WEBHOOK_URL` and `TARGET_DIR`. Then run `uv sync --frozen`, `uv run pytest`, and `uv run python src/main.py`. To make a local release build, run `uv sync --frozen --group build` followed by `uv run python scripts/build_release.py` on the target operating system.
 

@@ -1,8 +1,10 @@
+import asyncio
 import json
 
 import pytest
 
 from handlers.secrets import BotEnv
+from server.server import Server
 from utils.miscutil import normalize_message_newlines
 
 
@@ -36,11 +38,49 @@ def test_environment_newlines_and_paths(tmp_path, monkeypatch):
 
 def test_environment_overrides_file(tmp_path, monkeypatch):
     config = tmp_path / ".env"
-    config.write_text('SERVER_START_MESSAGE="file"\n', encoding="utf-8")
+    config.write_text('SERVER_START_MESSAGE="file"\nSENDER_ICON_PLAYER="FilePlayer"\n', encoding="utf-8")
     monkeypatch.setenv("WEBHOOK_URL", "https://discord.com/api/webhooks/123456789012345678/test-tokentest-tokentest-tokentest-tokentest-tokentest-token")
     monkeypatch.setenv("SERVER_START_MESSAGE", r"environment\nmessage")
+    monkeypatch.setenv("SENDER_ICON_PLAYER", "EnvironmentPlayer")
     BotEnv.init(config)
     assert BotEnv.ServerStartMessage.get() == "environment\nmessage"
+    assert BotEnv.SenderIconPlayer.get() == "EnvironmentPlayer"
+
+
+@pytest.mark.parametrize("icon_player", ["", "AdminPlayer"])
+def test_optional_sender_icon_player_in_config(tmp_path, monkeypatch, icon_player):
+    config = tmp_path / ".env"
+    # Existing configurations do not need to add the new optional setting.
+    config.write_text(
+        'SENDER_ICON="https://example.com/custom.png"\n'
+        + (f'SENDER_ICON_PLAYER="{icon_player}"\n' if icon_player else ""),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("WEBHOOK_URL", "https://discord.com/api/webhooks/123456789012345678/test-tokentest-tokentest-tokentest-tokentest-tokentest-token")
+    BotEnv.init(config)
+    assert BotEnv.SenderIcon.get() == "https://example.com/custom.png"
+    assert BotEnv.SenderIconPlayer.get() == icon_player
+
+
+def test_server_initialization_uses_configured_icon_player(tmp_path):
+    config = tmp_path / ".env"
+    config.write_text(
+        'WEBHOOK_URL=https://discord.com/api/webhooks/123456789012345678/test-tokentest-tokentest-tokentest-tokentest-tokentest-token\n'
+        'SENDER_ICON=""\n'
+        'SENDER_ICON_PLAYER="AdminPlayer"\n'
+        'PLAYER_ICON_API="https://example.com/avatars/"\n',
+        encoding="utf-8",
+    )
+
+    async def initialize():
+        server = Server()
+        try:
+            server.init(config)
+            assert server.webhook.server_console_pic == "https://example.com/avatars/AdminPlayer"
+        finally:
+            await server.shutdown()
+
+    asyncio.run(initialize())
 
 
 def test_tips_preserve_commas_unicode_and_newlines(tmp_path, monkeypatch):

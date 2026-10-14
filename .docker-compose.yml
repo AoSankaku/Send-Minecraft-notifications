@@ -21,6 +21,7 @@ services:
       EMBED_MODE: false
       SENDER_NAME: 'My Minecraft Bot'
       SENDER_ICON: ''
+      SENDER_ICON_PLAYER: ''
       PLAYER_ICON_API: 'https://mineskin.eu/helm/'
       TIPS_PREFIX: ':information_source: '
       TIPS_MESSAGES: '["このサーバーはXXXが運営しています！","建築メンバーを募集中です！","入れてほしいMODがあったら教えてください！"]'

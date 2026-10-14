@@ -8,6 +8,43 @@ from discord.webhook.async_ import AsyncWebhookAdapter
 from message.webhook import DiscordWebhook
 
 
+@pytest.mark.parametrize(
+    "icon_url, icon_player, expected_avatar",
+    [
+        ("", "", "https://raw.githubusercontent.com/AoSankaku/Send-Minecraft-notifications/main/assets/info_icon_dot.png"),
+        ("", "AdminPlayer", "https://example.com/avatars/AdminPlayer"),
+        ("https://example.com/custom.png", "", "https://example.com/custom.png"),
+        ("https://example.com/custom.png", "AdminPlayer", "https://example.com/custom.png"),
+    ],
+)
+def test_server_icon_selection_is_independent_of_player_messages(
+    monkeypatch, icon_url, icon_player, expected_avatar
+):
+    execute = AsyncMock(return_value=None)
+    monkeypatch.setattr(AsyncWebhookAdapter, "execute_webhook", execute)
+
+    async def send():
+        webhook = DiscordWebhook(
+            "https://discord.com/api/webhooks/123456789012345678/test-tokentest-tokentest-tokentest-tokentest-tokentest-token",
+            "https://example.com/avatars/", "Server", icon_url,
+            server_icon_player=icon_player,
+        )
+        try:
+            await webhook.sendServerMessage("Server online")
+            await webhook.sendPlayerMessage("Player chat", "ChatPlayer")
+            await webhook.sendServerMessage("Server notification")
+        finally:
+            await webhook.onClose()
+
+    asyncio.run(send())
+    payloads = [call.kwargs["payload"] for call in execute.call_args_list]
+    assert [payload["avatar_url"] for payload in payloads] == [
+        expected_avatar, "https://example.com/avatars/ChatPlayer", expected_avatar,
+    ]
+    assert [payload["username"] for payload in payloads] == ["Server", "ChatPlayer", "Server"]
+    assert all(payload["allowed_mentions"] == {"parse": []} for payload in payloads)
+
+
 @pytest.mark.parametrize("method", ["sendMessage", "sendPlayerMessage", "sendServerMessage"])
 def test_all_notifications_disable_mentions_in_api_payload(monkeypatch, method):
     execute = AsyncMock(return_value=None)

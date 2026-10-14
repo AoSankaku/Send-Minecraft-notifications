@@ -59,7 +59,8 @@ class Server:
             BotEnv.WebhookUrl.get(),
             BotEnv.PlayerIconApi.get(),
             BotEnv.SenderName.get(),
-            BotEnv.SenderIcon.get()
+            BotEnv.SenderIcon.get(),
+            server_icon_player=BotEnv.SenderIconPlayer.get(),
         )
         self.logger.info("Webhook initialized.")
         

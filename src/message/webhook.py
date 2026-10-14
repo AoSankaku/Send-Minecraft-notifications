@@ -5,6 +5,12 @@ import asyncio
 import structlog
 
 
+DEFAULT_SERVER_ICON_URL = (
+    "https://raw.githubusercontent.com/AoSankaku/Send-Minecraft-notifications/"
+    "main/assets/info_icon_dot.png"
+)
+
+
 class DiscordWebhook:
     def __init__(
         self,
@@ -12,6 +18,8 @@ class DiscordWebhook:
         avatar_url_base: str,
         server_webhook_name: str,
         server_console_pic: str,
+        *,
+        server_icon_player: str = "",
     ):
         self.webhook_url: str = webhook_url
         self.aiohttp_session = aiohttp.ClientSession()
@@ -20,7 +28,12 @@ class DiscordWebhook:
         )
         self.avatar_url_base: str = avatar_url_base
         self.server_webhook_name = server_webhook_name
-        self.server_console_pic = server_console_pic
+        if server_console_pic:
+            self.server_console_pic = server_console_pic
+        elif server_icon_player:
+            self.server_console_pic = urljoin(self.avatar_url_base, server_icon_player)
+        else:
+            self.server_console_pic = DEFAULT_SERVER_ICON_URL
         self.logger: structlog.stdlib.BoundLogger = structlog.get_logger()
 
     async def _send_with_retry(self, *args, **kwargs):
