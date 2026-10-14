@@ -1,10 +1,25 @@
 import asyncio
 import sys
+import os
+import subprocess
+from pathlib import Path
 
 from main import cli
 from utils.runtime import default_config_path, resource_path
 from utils.logutil import LogUtil
 from server.server import Server
+
+
+def test_first_run_outputs_utf8_even_with_a_western_console_encoding(tmp_path):
+    entrypoint = Path(__file__).resolve().parents[1] / "main.py"
+    result = subprocess.run(
+        [sys.executable, str(entrypoint), "--config", str(tmp_path / ".env"), "--init-config"],
+        env=os.environ | {"PYTHONIOENCODING": "cp1252"},
+        capture_output=True,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stderr.decode(errors="replace")
+    assert "WEBHOOK_URL と TARGET_DIR" in result.stdout.decode("utf-8")
 
 
 def test_frozen_resources_and_config_have_separate_locations(tmp_path, monkeypatch):
