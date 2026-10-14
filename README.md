@@ -31,9 +31,11 @@ sha256sum --check --ignore-missing SHA256SUMS-linux-x64.txt
 
 必要に応じて設定ファイルの場所を `--config <path>` で指定できます。`--init-config` は設定雛形を作成し、`--check-config` は設定を検査します。たとえば、Windows では次のように実行します。
 
+Windows の実行ファイル名は、アプリ名・Git ブランチ・ビルド元コミットから生成されます。以下の `smn-main-abcdef0.exe` はファイル名の例です。ダウンロードした実際のファイル名に置き換えてください。
+
 ```powershell
-.\send-minecraft-notifications-windows-x64.exe --init-config
-.\send-minecraft-notifications-windows-x64.exe --config .\.env --check-config
+.\smn-main-abcdef0.exe --init-config
+.\smn-main-abcdef0.exe --config .\.env --check-config
 ```
 
 `TARGET_DIR` を相対パスで書いた場合は、`.env` ファイルがあるフォルダーからの相対パスとして解決されます。サーバー起動直後に `logs/latest.log` がまだ作られていなくても、ファイルが現れるまで待機します。
@@ -93,7 +95,7 @@ uv run python scripts/build_release.py
 
 両 OS のテスト・単体実行チェックが成功した後、成果物のチェックサムを検証し、実行ファイル・ZIP・チェックサムの計6ファイルを同じ GitHub Release へ添付して自動公開します。リリースノートも自動生成されます。アップロード完了までは Draft 状態を維持し、途中で失敗した場合は公開しません。再実行では途中の Draft を完成させ、公開済みのリリースの添付ファイルは変更しません。
 
-`1.2.3-rc.1`・`v1.2.3-beta.1` のようなタグは Prerelease として公開します。追加のトークン設定は不要で、公開ジョブに限定した `GITHUB_TOKEN` の `contents: write` 権限を使用します。Actions からの手動実行はビルドと Actions artifact の作成のみで、リリースは公開しません。
+`1.2.3-rc.1`・`v1.2.3-beta.1` のようなタグは Prerelease として公開します。ベータタグでは Docker の `latest` タグを更新しません。追加のトークン設定は不要で、公開ジョブに限定した `GITHUB_TOKEN` の `contents: write` 権限を使用します。Actions からの手動実行はビルドと Actions artifact の作成のみで、リリースは公開しません。
 
 ## English
 
@@ -105,7 +107,7 @@ System/server notifications use the original [info icon](assets/info_icon_dot.pn
 
 For development, install Python 3.12 and uv, copy `.env.example` to `.env`, and set `WEBHOOK_URL` and `TARGET_DIR`. Then run `uv sync --frozen`, `uv run pytest`, and `uv run python src/main.py`. To make a local release build, run `uv sync --frozen --group build` followed by `uv run python scripts/build_release.py` on the target operating system.
 
-Pushing any release tag (for example `1.2.3` or `v1.2.3`) runs both platform builds and publishes one GitHub Release containing both binaries, ZIPs, and checksums after tests and asset verification succeed. The tagged commit must include the release workflow. Version tags with a suffix such as `-rc.1` publish a prerelease. Failed uploads remain drafts; reruns complete drafts while preserving published releases. Manual workflow runs create Actions artifacts only. No additional token is required.
+Pushing any release tag (for example `1.2.3` or `v1.2.3`) runs both platform builds and publishes one GitHub Release containing both binaries, ZIPs, and checksums after tests and asset verification succeed. The tagged commit must include the release workflow. Version tags with a suffix such as `-rc.1` publish a prerelease and do not update Docker's `latest` tag. Failed uploads remain drafts; reruns complete drafts while preserving published releases. Manual workflow runs create Actions artifacts only. No additional token is required.
 
 ## License
 

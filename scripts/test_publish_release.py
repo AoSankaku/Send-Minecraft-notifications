@@ -22,10 +22,12 @@ class PublishReleaseTests(unittest.TestCase):
         self.assets = self.root / "release-assets"
         self.assets.mkdir()
         for platform, suffix in (("windows-x64", ".exe"), ("linux-x64", "")):
-            names = (
-                f"send-minecraft-notifications-{platform}{suffix}",
-                f"send-minecraft-notifications-{platform}.zip",
+            binary_name = (
+                "smn-main-123abcd.exe"
+                if platform == "windows-x64"
+                else f"send-minecraft-notifications-{platform}{suffix}"
             )
+            names = (binary_name, f"send-minecraft-notifications-{platform}.zip")
             for name in names:
                 (self.assets / name).write_bytes(name.encode())
             sums = "".join(
@@ -111,13 +113,34 @@ class PublishReleaseTests(unittest.TestCase):
         self.assertEqual(commands, [])
 
     def test_prerelease_tags_with_or_without_v_prefix(self):
-        for tag in ("1.2.3-rc.1", "v1.2.3-beta.1"):
+        for tag in ("1.2.3-rc.1", "v1.2.3-beta.1", "v1.0.0-beta0"):
             with self.subTest(tag=tag):
                 self.commands.unlink(missing_ok=True)
                 result, commands = self.run_script(TAG_NAME=tag)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(commands[-1][2], tag)
                 self.assertIn("--prerelease=true", commands[-1])
+
+    def test_multiple_executables_never_call_github(self):
+        (self.assets / "smn-feature-7654321.exe").write_bytes(b"second application executable")
+        result, commands = self.run_script()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("exactly one Windows EXE", result.stderr.decode())
+        self.assertEqual(commands, [])
+
+    def test_unrelated_executable_never_calls_github(self):
+        (self.assets / "unrelated.exe").write_bytes(b"unexpected executable")
+        result, commands = self.run_script()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(commands, [])
+
+    def test_overlong_executable_name_never_calls_github(self):
+        current = self.assets / "smn-main-123abcd.exe"
+        current.rename(self.assets / f"smn-{'a' * 30}-123abcd.exe")
+        result, commands = self.run_script()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("exceeds 28 characters", result.stderr.decode())
+        self.assertEqual(commands, [])
 
 
 if __name__ == "__main__":
