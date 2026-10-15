@@ -10,6 +10,8 @@ if [[ ! -d "$assets_dir" || -L "$assets_dir" ]]; then
   exit 1
 fi
 
+expected_windows_exe_name="$(python3 "$script_dir/release_docs.py" windows-filename --tag "$TAG_NAME" --repo "$GH_REPO")"
+
 mapfile -d '' windows_executables < <(
   find "$assets_dir" -mindepth 1 -maxdepth 1 -type f -iname '*.exe' -print0
 )
@@ -19,12 +21,9 @@ if [[ ${#windows_executables[@]} -ne 1 ]]; then
 fi
 windows_exe="${windows_executables[0]}"
 windows_exe_name="${windows_exe##*/}"
-if [[ ! "$windows_exe_name" =~ ^smn-.+-[0-9a-f]{7,}\.exe$ ]]; then
-  printf 'Unexpected Windows EXE name: %s\n' "$windows_exe_name" >&2
-  exit 1
-fi
-if (( ${#windows_exe_name} > 28 )); then
-  printf 'Windows EXE name exceeds 28 characters: %s\n' "$windows_exe_name" >&2
+if [[ "$windows_exe_name" != "$expected_windows_exe_name" ]]; then
+  printf 'Windows EXE name does not match release tag %s: expected %s, got %s\n' \
+    "$TAG_NAME" "$expected_windows_exe_name" "$windows_exe_name" >&2
   exit 1
 fi
 

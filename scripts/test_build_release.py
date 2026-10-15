@@ -1,4 +1,4 @@
-"""Targeted tests for Windows release executable names and source metadata."""
+"""Targeted tests for public release and local debug executable names."""
 from pathlib import Path
 import tempfile
 import unittest
@@ -49,6 +49,116 @@ class WindowsExecutableNameTests(unittest.TestCase):
     def test_rejects_non_hex_hash(self):
         with self.assertRaisesRegex(ValueError, "hexadecimal Git hash"):
             build_release.build_windows_filename("smn", "main", "not-a-hash")
+
+
+class PublicWindowsExecutableNameTests(unittest.TestCase):
+    def test_uses_full_application_name_version_and_platform(self):
+        self.assertEqual(
+            build_release.build_windows_release_filename("v1.2.3-beta.1"),
+            "send-minecraft-notifications-v1.2.3-beta.1-windows-x64.exe",
+        )
+
+    def test_does_not_apply_local_debug_length_limit(self):
+        name = build_release.build_windows_release_filename("1.2.3")
+        self.assertGreater(len(name), 28)
+        self.assertEqual(name, "send-minecraft-notifications-1.2.3-windows-x64.exe")
+
+    def test_preserves_version_metadata_and_sanitizes_tag_separator(self):
+        self.assertEqual(
+            build_release.build_windows_release_filename("release/v1.2.3+build.4"),
+            "send-minecraft-notifications-release-v1.2.3+build.4-windows-x64.exe",
+        )
+
+    def test_rejects_unsafe_or_unrepresentable_versions(self):
+        for version in ("", "../1.2.3", "v1:2:3", "v1\\2", "--help", "v1\nmalicious", "v" + "1" * 255):
+            with self.subTest(version=version), self.assertRaises(ValueError):
+                build_release.build_windows_release_filename(version)
+
+    def test_reads_default_release_version_from_metadata(self):
+        with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent) as temporary:
+            metadata = Path(temporary) / "pyproject.toml"
+            metadata.write_text('[project]\nversion = "1.2.3b1"\n', encoding="utf-8")
+            self.assertEqual(build_release.project_version(metadata), "1.2.3b1")
+
+
+class BuildNamingIntegrationTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent)
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        (self.root / "dist").mkdir()
+        (self.root / "dist" / "send-minecraft-notifications.exe").write_bytes(b"fake completed binary")
+        (self.root / "dist" / "send-minecraft-notifications").write_bytes(b"fake completed Linux binary")
+        (self.root / "pyproject.toml").write_text('[project]\nname = "smn"\nversion = "1.2.3b1"\n', encoding="utf-8")
+        for name in ("README.md", "LICENSE", build_release.CONFIG_TEMPLATE):
+            (self.root / name).write_text("public data", encoding="utf-8")
+        (self.root / "README.md").write_text(
+            "# Project\n<!-- smn:install-ja:start -->\nold release instructions\n<!-- smn:install-ja:end -->\n"
+            "<!-- smn:install-en:start -->\nold release instructions\n<!-- smn:install-en:end -->\n",
+            encoding="utf-8",
+        )
+
+    def build(self, args, environment, target=("windows", "x64", ".exe")):
+        with (
+            mock.patch.object(build_release, "ROOT", self.root),
+            mock.patch.object(build_release, "resolve_target", return_value=target),
+            mock.patch.object(build_release.subprocess, "run") as compiler,
+            mock.patch.object(build_release, "resolve_source_identity", return_value=("main", "123abcd")) as identity,
+            mock.patch.object(build_release, "copy_local_windows_executable") as export,
+            mock.patch.dict(build_release.os.environ, environment, clear=True),
+            mock.patch("sys.argv", ["build_release.py", *args]),
+        ):
+            build_release.main()
+        compiler.assert_called_once()
+        return identity, export
+
+    def assert_release_files(self, expected):
+        release = self.root / "dist" / "release"
+        self.assertTrue((release / expected).is_file())
+        with build_release.zipfile.ZipFile(release / "send-minecraft-notifications-windows-x64.zip") as archive:
+            self.assertIn(expected, archive.namelist())
+        self.assertIn(expected, (release / "SHA256SUMS-windows-x64.txt").read_text(encoding="utf-8"))
+
+    def test_ci_uses_release_tag_without_branch_or_hash(self):
+        identity, export = self.build([], {"GITHUB_ACTIONS": "true", "SMN_RELEASE_VERSION": "v1.2.3-beta.1"})
+        self.assert_release_files("send-minecraft-notifications-v1.2.3-beta.1-windows-x64.exe")
+        identity.assert_not_called()
+        export.assert_not_called()
+
+    def test_manual_ci_build_uses_project_version(self):
+        identity, export = self.build([], {"GITHUB_ACTIONS": "true", "SMN_RELEASE_VERSION": ""})
+        self.assert_release_files("send-minecraft-notifications-1.2.3b1-windows-x64.exe")
+        identity.assert_not_called()
+        export.assert_not_called()
+
+    def test_explicit_public_version_overrides_environment_and_stays_in_distribution(self):
+        original_readme = (self.root / "README.md").read_bytes()
+        identity, export = self.build(["--version", "v2.0.0"], {"SMN_RELEASE_VERSION": "v1.0.0"})
+        self.assert_release_files("send-minecraft-notifications-v2.0.0-windows-x64.exe")
+        with build_release.zipfile.ZipFile(self.root / "dist/release/send-minecraft-notifications-windows-x64.zip") as archive:
+            readme = archive.read("README.md").decode("utf-8")
+        self.assertIn("/releases/download/v2.0.0/send-minecraft-notifications-v2.0.0-windows-x64.exe", readme)
+        self.assertNotIn("old release instructions", readme)
+        self.assertEqual((self.root / "README.md").read_bytes(), original_readme)
+        identity.assert_not_called()
+        export.assert_not_called()
+
+    def test_local_debug_build_keeps_app_branch_and_hash(self):
+        identity, export = self.build([], {})
+        self.assert_release_files("smn-main-123abcd.exe")
+        identity.assert_called_once()
+        export.assert_called_once()
+
+    def test_linux_public_zip_documents_matching_windows_release_name(self):
+        identity, export = self.build(
+            [], {"GITHUB_ACTIONS": "true", "SMN_RELEASE_VERSION": "v2.0.0", "GH_REPO": "example/fork"},
+            target=("linux", "x64", ""),
+        )
+        with build_release.zipfile.ZipFile(self.root / "dist/release/send-minecraft-notifications-linux-x64.zip") as archive:
+            readme = archive.read("README.md").decode("utf-8")
+        self.assertIn("example/fork/releases/download/v2.0.0/send-minecraft-notifications-v2.0.0-windows-x64.exe", readme)
+        identity.assert_not_called()
+        export.assert_not_called()
 
 
 class SourceIdentityTests(unittest.TestCase):
@@ -144,13 +254,15 @@ class PreviousWindowsExecutableCleanupTests(unittest.TestCase):
             "send-minecraft-notifications-windows-x64.exe", b"old legacy binary"
         )
         old_dynamic = self.write_executable("smn-feature-123abcd.exe", b"old dynamic binary")
-        current = self.write_executable("smn-main-7654321.exe", b"current binary")
+        old_public = self.write_executable("send-minecraft-notifications-v1.0.0-beta1-windows-x64.exe", b"old public binary")
+        current = self.write_executable("send-minecraft-notifications-v1.0.0-beta2-windows-x64.exe", b"current binary")
         linux_binary = self.write_executable("send-minecraft-notifications-linux-x64", b"linux")
         archive = self.write_executable("send-minecraft-notifications-windows-x64.zip", b"zip")
         config_example = self.write_executable("send-minecraft-notifications.example.toml", b"template")
         self.checksum_path.write_text(
             self.checksum_line(old_legacy.read_bytes(), old_legacy.name)
             + self.checksum_line(old_dynamic.read_bytes(), old_dynamic.name)
+            + self.checksum_line(old_public.read_bytes(), old_public.name)
             + self.checksum_line(current.read_bytes(), current.name),
             encoding="utf-8",
         )
@@ -159,9 +271,10 @@ class PreviousWindowsExecutableCleanupTests(unittest.TestCase):
             self.release_dir, self.checksum_path, current.name
         )
 
-        self.assertEqual(set(removed), {old_legacy, old_dynamic})
+        self.assertEqual(set(removed), {old_legacy, old_dynamic, old_public})
         self.assertFalse(old_legacy.exists())
         self.assertFalse(old_dynamic.exists())
+        self.assertFalse(old_public.exists())
         for retained in (current, linux_binary, archive, config_example):
             self.assertTrue(retained.exists())
 

@@ -11,7 +11,8 @@ import release_docs
 
 REPOSITORY = "example/project"
 TAG = "v2.3.4-beta.1"
-EXE = "smn-main-123abcd.exe"
+EXE = "send-minecraft-notifications-v2.3.4-beta.1-windows-x64.exe"
+LEGACY_EXE = "smn-main-123abcd.exe"
 TEMPLATE = """# Project
 
 Keep these instructions.
@@ -56,7 +57,7 @@ class DocumentationTests(unittest.TestCase):
         self.assertIn(TAG, updated)
 
     def test_published_beta1_instructions_keep_legacy_env_behavior(self):
-        rendered = release_docs.render_readme(TEMPLATE, "v1.0.0-beta1", REPOSITORY, EXE)
+        rendered = release_docs.render_readme(TEMPLATE, "v1.0.0-beta1", REPOSITORY, LEGACY_EXE)
         self.assertIn("create a `.env` template", rendered)
         self.assertIn("generated `.env`", rendered)
         self.assertNotIn("send-minecraft-notifications.toml", rendered)
@@ -64,7 +65,7 @@ class DocumentationTests(unittest.TestCase):
 
     def test_beta0_instructions_also_keep_legacy_env_behavior(self):
         rendered = release_docs.installation_section(
-            "v1.0.0-beta0", REPOSITORY, EXE, "en"
+            "v1.0.0-beta0", REPOSITORY, LEGACY_EXE, "en"
         )
         self.assertIn("create a `.env` template", rendered)
         self.assertNotIn("send-minecraft-notifications.toml", rendered)
@@ -77,7 +78,7 @@ class DocumentationTests(unittest.TestCase):
 
     def test_release_notes_preserve_changelog_and_do_not_duplicate_instructions(self):
         original = "## Changes\n\nRetain the maintainer's notes.\n"
-        first = release_docs.render_notes(original, "v1.0.0-beta0", REPOSITORY, EXE)
+        first = release_docs.render_notes(original, "v1.0.0-beta0", REPOSITORY, LEGACY_EXE)
         updated = release_docs.render_notes(first, TAG, REPOSITORY, EXE)
         self.assertTrue(updated.endswith(original))
         self.assertEqual(updated.count("<!-- smn:release-install:start -->"), 1)
@@ -101,11 +102,43 @@ class DocumentationTests(unittest.TestCase):
         for repository in ("https://example.com", "owner/repo/contents", "owner/repo?ref=other"):
             with self.subTest(repository=repository), self.assertRaises(ValueError):
                 release_docs.installation_section(TAG, repository, EXE, "ja")
+        for invalid_exe in ("../app.exe", "smn-main-123abcd.exe",
+                            "send-minecraft-notifications-v9.9.9-windows-x64.exe"):
+            with self.subTest(windows_exe=invalid_exe), self.assertRaises(ValueError):
+                release_docs.installation_section(TAG, REPOSITORY, invalid_exe, "en")
+
+    def test_public_versioned_names_validate_for_any_tag(self):
+        for tag in ("v1.0.0-beta0", "v1.0.0-beta1", TAG):
+            name = release_docs.release_windows_filename(tag)
+            with self.subTest(tag=tag):
+                release_docs.validate_inputs(tag, REPOSITORY, name)
         with self.assertRaises(ValueError):
-            release_docs.installation_section(TAG, REPOSITORY, "../app.exe", "en")
+            release_docs.validate_inputs(TAG, REPOSITORY, LEGACY_EXE)
+
+    def test_windows_filename_cli_uses_release_tag_without_git_or_network(self):
+        with mock.patch("sys.argv", ["release_docs.py", "windows-filename", "--tag", "release/v2.3.4+build",
+                                     "--repo", REPOSITORY]):
+            with mock.patch.object(release_docs.subprocess, "run", side_effect=AssertionError("unexpected subprocess")):
+                with mock.patch("builtins.print") as output:
+                    release_docs.main()
+        output.assert_called_once_with("send-minecraft-notifications-release-v2.3.4+build-windows-x64.exe")
+        with mock.patch("sys.argv", ["release_docs.py", "windows-filename", "--tag", "$(bad)",
+                                     "--repo", REPOSITORY]):
+            with self.assertRaises(ValueError):
+                release_docs.main()
+
+    def test_historical_release_docs_require_the_actual_published_filename(self):
+        with mock.patch("sys.argv", ["release_docs.py", "notes", "--tag", "v1.0.0-beta1",
+                                     "--repo", REPOSITORY, "--output", "unused.md"]):
+            with self.assertRaises(SystemExit) as error:
+                release_docs.main()
+        self.assertEqual(error.exception.code, 2)
 
     def test_tag_slash_and_plus_are_encoded_in_urls(self):
-        section = release_docs.installation_section("release/v2.3.4+build", REPOSITORY, EXE, "en")
+        tag = "release/v2.3.4+build"
+        section = release_docs.installation_section(
+            tag, REPOSITORY, release_docs.release_windows_filename(tag), "en"
+        )
         self.assertIn("/download/release%2Fv2.3.4%2Bbuild/", section)
 
     def test_readme_cli_writes_the_release_tag_into_a_distributable_readme(self):
@@ -179,7 +212,7 @@ class ReadmeSyncTests(unittest.TestCase):
         with mock.patch.object(release_docs, "github_api", side_effect=self.fake_api), self.assertRaises(ValueError):
             release_docs.sync_readme(TAG, REPOSITORY)
         self.assertEqual(self.writes, [])
-        self.release["assets"].append({"name": "smn-main-7654321.exe"})
+        self.release["assets"].append({"name": "send-minecraft-notifications-v2.3.4-beta.1-alt-windows-x64.exe"})
         with mock.patch.object(release_docs, "github_api", side_effect=self.fake_api), self.assertRaises(ValueError):
             release_docs.sync_readme(TAG, REPOSITORY)
         self.assertEqual(self.writes, [])

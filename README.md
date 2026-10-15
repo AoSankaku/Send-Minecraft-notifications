@@ -11,6 +11,8 @@ Minecraft サーバーのログを監視し、起動・終了、プレイヤー�
 
 公開済みの `v1.0.0-beta1` までの実行ファイルは従来どおり `.env` を使います。この設定ファイル名変更は、その後のビルドから利用できます。
 
+今後のWindows版リリース実行ファイル名は、アプリ名・リリースタグ・対象OSが分かる `send-minecraft-notifications-<tag>-windows-x64.exe` 形式です（タグ内の `/` は `-` に置き換えます）。公開済みの beta0/beta1 のファイル名は変わりません。
+
 <!-- smn:install-ja:start -->
 対象リリース: [v1.0.0-beta1](https://github.com/AoSankaku/Send-Minecraft-notifications/releases/tag/v1.0.0-beta1)。Python のインストールや ZIP の展開は不要です。設定を書き込めるフォルダーで実行してください。
 
@@ -89,7 +91,7 @@ TARGET_FILE = "latest.log"
 
 ### 設定ファイルの場所を指定する（Windows / Linux 共通）
 
-必要に応じて設定ファイルの場所を `--config <path>` で指定できます。`--init-config` は設定雛形を作成し、`--check-config` は設定を検査します。Windows の実行ファイル名は、アプリ名・Git ブランチ・ビルド元コミットから生成されます。上のコマンドには対象リリースの実際のファイル名を使用しています。
+必要に応じて設定ファイルの場所を `--config <path>` で指定できます。`--init-config` は設定雛形を作成し、`--check-config` は設定を検査します。今後のWindows版リリースの実行ファイル名には、アプリ名・バージョン（リリースタグ）・対象OSを含めます。上のコマンドには公開済みの対象リリースの実際のファイル名を使用しています。
 
 `TARGET_DIR` を相対パスで書いた場合は、`send-minecraft-notifications.toml` があるフォルダーからの相対パスとして解決されます。旧 `.env` を変換した場合も、そのファイルがあったフォルダーを基準にします。サーバー起動直後に `logs/latest.log` がまだ作られていなくても、ファイルが現れるまで待機します。
 
@@ -193,8 +195,10 @@ uv run python src/main.py
 
 ```sh
 uv sync --frozen --group build
-uv run python scripts/build_release.py
+uv run python scripts/build_release.py --version v1.2.3
 ```
+
+`v1.2.3` は配布するバージョンまたはタグに置き換えてください。PC内でデバッグ用にビルドする場合は `--version` を付けずに実行します。ローカルのWindowsデバッグ用EXEだけは、アプリ名・ブランチ名・短いコミットハッシュを含む28文字以内の名前になります。
 
 生成物は `dist/release/` に作成されます。単体バイナリ、バイナリと README・LICENSE・`send-minecraft-notifications.example.toml` をまとめた ZIP、SHA-256 チェックサムが入ります。
 
@@ -292,6 +296,10 @@ TARGET_FILE = "latest.log"
 
 Quote strings and use `true` / `false` for switches. Single quotes preserve Windows backslashes, for example `TARGET_DIR = 'C:\Minecraft\logs'`. Double-quoted message strings support escapes: `"first\nsecond"` contains a line break; single-quoted `'first\nsecond'` keeps the literal backslash and `n`. Legacy `${NAME}` references can use earlier values from the same `.env` file. Process environment overrides remain supported at runtime and are never saved during migration.
 
+### Windows executable names
+
+Future Windows releases use `send-minecraft-notifications-<tag>-windows-x64.exe`, so the asset identifies the app, exact release tag, and platform. A `/` in a tag is replaced by `-` in the filename. The already published `v1.0.0-beta0` and `v1.0.0-beta1` assets keep their existing names. Local builds without `--version` use a compact debug filename containing the app, branch, and short commit hash (up to 28 characters). To build locally with the public release naming format, pass the tag, for example `uv run python scripts/build_release.py --version v1.2.3`; GitHub Actions uses the pushed tag automatically.
+
 ### Japanese chat (builds after v1.0.0-beta1)
 
 Add these settings to `send-minecraft-notifications.toml` and restart to show original chat and Japanese text together. Missing settings default to disabled:
@@ -323,7 +331,7 @@ Builds after `v1.0.0-beta1` use `send-minecraft-notifications.toml` beside the e
 
 System/server notifications use the original [info icon](assets/info_icon_dot.png) from this repository's fixed `main/assets/info_icon_dot.png` Raw URL by default; no player's skin is used as the default. Leave `SENDER_ICON` and `SENDER_ICON_PLAYER` empty or unset to use it. Administrators can set `SENDER_ICON` to a custom image URL, or leave it empty and set `SENDER_ICON_PLAYER` to a Minecraft player name to use that player's icon through `PLAYER_ICON_API`. An explicit image URL takes priority over a player name. Existing icon URLs remain supported; clear the old URL to switch to the default. Player chat continues to use each player's own icon. Restart the notifier after changing settings. The default image must be published to `main` before its Raw URL is available.
 
-For development, install Python 3.12 and uv, copy `send-minecraft-notifications.example.toml` to `send-minecraft-notifications.toml`, and set `WEBHOOK_URL` and `TARGET_DIR`. Then run `uv sync --frozen`, `uv run pytest`, and `uv run python src/main.py`. To make a local release build, run `uv sync --frozen --group build` followed by `uv run python scripts/build_release.py` on the target operating system.
+For development, install Python 3.12 and uv, copy `send-minecraft-notifications.example.toml` to `send-minecraft-notifications.toml`, and set `WEBHOOK_URL` and `TARGET_DIR`. Then run `uv sync --frozen`, `uv run pytest`, and `uv run python src/main.py`. To build on the target operating system, run `uv sync --frozen --group build` followed by `uv run python scripts/build_release.py`. Omitting `--version` produces the compact local debug filename; pass `--version <tag>` to produce the public versioned name.
 
 Pushing a release tag (for example `1.2.3` or `v1.2.3`) runs both platform builds and publishes one GitHub Release containing both binaries, ZIPs, and checksums after tests and asset verification succeed. Tag names must start with an ASCII letter or digit and contain only ASCII letters, digits, `.`, `_`, `/`, `+`, or `-`. The tagged commit must include the release workflow. Each ZIP's README and the release notes include generated Linux and PowerShell installation commands using that release's tag and actual Windows filename. After publication, Actions updates only the managed installation sections of the default branch's README. Older release reruns cannot roll the URLs back. Branch rules must allow this README update; if it fails, the published binaries remain available. Edit `scripts/release_docs.py` to change instructions inside the `smn:install-ja` / `smn:install-en` markers.
 

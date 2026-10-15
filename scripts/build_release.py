@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import hashlib
 import os
 import platform
@@ -67,6 +68,7 @@ def build_windows_filename(
     commit: str,
     max_length: int = MAX_WINDOWS_FILENAME_LENGTH,
 ) -> str:
+    """Name a local debug build using the app, branch and short HEAD hash."""
     app = sanitize_filename_component(app_name)
     safe_branch = sanitize_filename_component(branch)
     if not re.fullmatch(r"[0-9a-fA-F]{7,}", commit):
@@ -93,12 +95,31 @@ def build_windows_filename(
     return filename
 
 
+def build_windows_release_filename(version: str) -> str:
+    """Keep the full product name and release version in public downloads."""
+    if not isinstance(version, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/+\-]*", version):
+        raise ValueError("Unsupported release version; use a version or release tag.")
+    # Git tags may contain '/', which cannot appear in a Windows basename.
+    filename = f"{PRODUCT}-{version.replace('/', '-')}-windows-x64.exe"
+    if len(filename) > 255:
+        raise ValueError("Release executable filename exceeds the Windows 255-character limit.")
+    return filename
+
+
 def project_name(pyproject_path: Path) -> str:
     project = tomllib.loads(pyproject_path.read_text(encoding="utf-8")).get("project", {})
     name = project.get("name")
     if not isinstance(name, str) or not name:
         raise RuntimeError(f"Project name is missing from {pyproject_path}.")
     return name
+
+
+def project_version(pyproject_path: Path) -> str:
+    project = tomllib.loads(pyproject_path.read_text(encoding="utf-8")).get("project", {})
+    version = project.get("version")
+    if not isinstance(version, str) or not version:
+        raise RuntimeError(f"Project version is missing from {pyproject_path}.")
+    return version
 
 
 def copy_local_windows_executable(
@@ -153,6 +174,7 @@ def cleanup_previous_windows_executables(
     checksum_line = re.compile(r"^([0-9a-fA-F]{64})  (.+)$")
     legacy_name = f"{PRODUCT}-windows-x64.exe"
     dynamic_name = re.compile(r"smn-.+-[0-9a-fA-F]{7,}\.exe")
+    versioned_name = re.compile(re.escape(PRODUCT) + r"-[A-Za-z0-9][A-Za-z0-9._+\-]*-windows-x64\.exe")
 
     for line in checksum_path.read_text(encoding="utf-8").splitlines():
         match = checksum_line.fullmatch(line)
@@ -163,6 +185,8 @@ def cleanup_previous_windows_executables(
             continue
         if name != legacy_name and not (
             len(name) <= MAX_WINDOWS_FILENAME_LENGTH and dynamic_name.fullmatch(name)
+        ) and not (
+            len(name) <= 255 and versioned_name.fullmatch(name)
         ):
             continue
         # The allowlist above excludes separators; keep an explicit basename check
@@ -204,14 +228,34 @@ def validate_archive(path: Path, expected_members: set[str]) -> None:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Build public release assets or a local debug executable.")
+    parser.add_argument(
+        "--version", default=os.environ.get("SMN_RELEASE_VERSION") or None,
+        help="Public release version/tag; CI defaults to project.version, local builds without this option use debug names",
+    )
+    args = parser.parse_args()
+    public_release = args.version is not None or os.environ.get("GITHUB_ACTIONS", "").lower() == "true"
+    release_readme = None
+    if public_release:
+        version = args.version if args.version is not None else project_version(ROOT / "pyproject.toml")
+        windows_release_name = build_windows_release_filename(version)
+        from release_docs import DEFAULT_REPOSITORY, render_readme
+
+        release_readme = render_readme(
+            (ROOT / "README.md").read_text(encoding="utf-8"), version,
+            os.environ.get("GH_REPO", DEFAULT_REPOSITORY), windows_release_name,
+        )
     target_os, target_arch, suffix = resolve_target()
     platform_arch = f"{target_os}-{target_arch}"
     if target_os == "windows":
-        build_branch = os.environ.get("SMN_BUILD_BRANCH")
-        branch, commit = resolve_source_identity(ROOT, build_branch)
-        binary_name = build_windows_filename(
-            project_name(ROOT / "pyproject.toml"), branch, commit
-        )
+        if public_release:
+            binary_name = windows_release_name
+        else:
+            build_branch = os.environ.get("SMN_BUILD_BRANCH")
+            branch, commit = resolve_source_identity(ROOT, build_branch)
+            binary_name = build_windows_filename(
+                project_name(ROOT / "pyproject.toml"), branch, commit
+            )
     else:
         binary_name = f"{PRODUCT}-{platform_arch}{suffix}"
 
@@ -246,7 +290,10 @@ def main() -> None:
 
     with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         for source in archive_sources:
-            archive.write(source, arcname=source.name)
+            if source.name == "README.md" and release_readme is not None:
+                archive.writestr(source.name, release_readme)
+            else:
+                archive.write(source, arcname=source.name)
 
     validate_archive(archive_path, {path.name for path in archive_sources})
 
@@ -261,7 +308,7 @@ def main() -> None:
             print(f"  Removed previous Windows executable: {path.name}")
     checksum_path.write_text("\n".join(checksum_lines) + "\n", encoding="utf-8")
 
-    if target_os == "windows" and os.environ.get("GITHUB_ACTIONS", "").lower() != "true":
+    if target_os == "windows" and not public_release:
         exported = copy_local_windows_executable(binary, binary.name)
         print(f"  Local export: {exported}")
 

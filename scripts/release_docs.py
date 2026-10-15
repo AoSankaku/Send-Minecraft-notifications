@@ -19,12 +19,32 @@ CONFIG_FILENAME = f"{PRODUCT}.toml"
 
 
 def validate_inputs(tag: str, repository: str, windows_exe: str) -> None:
+    validate_tag_repository(tag, repository)
+    if tag in LEGACY_CONFIG_TAGS and re.fullmatch(r"smn-[A-Za-z0-9_.-]+-[0-9a-f]{7,}\.exe", windows_exe):
+        # Keep the names already published for beta0/beta1 usable when their
+        # managed README sections are rendered again.
+        return
+    expected = release_windows_filename(tag)
+    if windows_exe != expected:
+        raise ValueError(
+            f"Windows release filename for tag {tag!r} must be {expected!r}, got {windows_exe!r}"
+        )
+
+
+def validate_tag_repository(tag: str, repository: str) -> None:
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/+\-]*", tag):
         raise ValueError(f"Unsupported release tag: {tag!r}")
     if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository):
         raise ValueError(f"Invalid GitHub repository: {repository!r}")
-    if not re.fullmatch(r"smn-[A-Za-z0-9_.-]+-[0-9a-f]{7,}\.exe", windows_exe) or len(windows_exe) > 28:
-        raise ValueError(f"Invalid Windows release filename: {windows_exe!r}")
+
+
+def release_windows_filename(tag: str) -> str:
+    """Return the public Windows asset name for a validated release tag."""
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/+\-]*", tag):
+        raise ValueError(f"Unsupported release tag: {tag!r}")
+    from build_release import build_windows_release_filename
+
+    return build_windows_release_filename(tag)
 
 
 def installation_section(tag: str, repository: str, windows_exe: str, language: str) -> str:
@@ -208,7 +228,7 @@ def github_api(endpoint: str, *, payload: dict | None = None, paginate: bool = F
 def sync_readme(tag: str, repository: str) -> bool:
     """Update only managed sections on the default branch after publication."""
     # Validate before using either value in an API path.
-    validate_inputs(tag, repository, "smn-main-0000000.exe")
+    validate_tag_repository(tag, repository)
     releases = [release for page in github_api(f"repos/{repository}/releases", paginate=True) for release in page]
     published = [release for release in releases if not release["draft"] and release.get("published_at")]
     if not published:
@@ -243,7 +263,7 @@ def sync_readme(tag: str, repository: str) -> bool:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("readme", "notes", "sync-readme"))
+    parser.add_argument("mode", choices=("readme", "notes", "sync-readme", "windows-filename"))
     parser.add_argument("--tag", required=True)
     parser.add_argument("--repo", default=os.environ.get("GH_REPO", DEFAULT_REPOSITORY))
     parser.add_argument("--windows-exe")
@@ -251,15 +271,20 @@ def main() -> None:
     parser.add_argument("--existing", type=Path)
     parser.add_argument("--output", type=Path)
     arguments = parser.parse_args()
+    if arguments.mode == "windows-filename":
+        validate_tag_repository(arguments.tag, arguments.repo)
+        print(release_windows_filename(arguments.tag))
+        return
     if arguments.mode == "sync-readme":
         sync_readme(arguments.tag, arguments.repo)
         return
     windows_exe = arguments.windows_exe
     if windows_exe is None:
-        from build_release import build_windows_filename, project_name, resolve_source_identity
-
-        branch, commit = resolve_source_identity(ROOT, os.environ.get("SMN_BUILD_BRANCH"))
-        windows_exe = build_windows_filename(project_name(ROOT / "pyproject.toml"), branch, commit)
+        if arguments.tag in LEGACY_CONFIG_TAGS:
+            parser.error(
+                "--windows-exe is required for published beta0/beta1 because those releases use historical asset names"
+            )
+        windows_exe = release_windows_filename(arguments.tag)
     if arguments.mode == "readme":
         document = render_readme(arguments.path.read_text(encoding="utf-8"), arguments.tag, arguments.repo, windows_exe)
         destination = arguments.output or arguments.path

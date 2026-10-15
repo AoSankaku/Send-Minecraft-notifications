@@ -28,7 +28,8 @@ jobs:
     permissions:
       contents: read
     env:
-      SMN_BUILD_BRANCH: ${{ github.event.repository.default_branch }}
+      SMN_RELEASE_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+      GH_REPO: ${{ github.repository }}
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -57,16 +58,8 @@ jobs:
       - name: Test release documentation
         run: uv run python scripts/test_release_docs.py
 
-      - name: Generate README for this release tag
-        if: github.ref_type == 'tag'
-        env:
-          TAG_NAME: ${{ github.ref_name }}
-          GH_REPO: ${{ github.repository }}
-        shell: bash
-        run: uv run python scripts/release_docs.py readme --tag "$TAG_NAME"
-
       - name: Build release assets
-        # The archive includes the README generated from the current tag.
+        # The builder embeds a README generated from the release tag.
         run: uv run python scripts/build_release.py
 
       - name: Smoke test the standalone binary

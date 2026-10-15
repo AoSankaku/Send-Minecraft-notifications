@@ -21,11 +21,10 @@ class PublishReleaseTests(unittest.TestCase):
         self.root = Path(temporary.name)
         self.assets = self.root / "release-assets"
         self.assets.mkdir()
-        for platform, suffix in (("windows-x64", ".exe"), ("linux-x64", "")):
+        self.install_windows_asset("1.2.3")
+        for platform, suffix in (("linux-x64", ""),):
             binary_name = (
-                "smn-main-123abcd.exe"
-                if platform == "windows-x64"
-                else f"send-minecraft-notifications-{platform}{suffix}"
+                f"send-minecraft-notifications-{platform}{suffix}"
             )
             names = (binary_name, f"send-minecraft-notifications-{platform}.zip")
             for name in names:
@@ -70,6 +69,22 @@ class PublishReleaseTests(unittest.TestCase):
             FAKE_GH_STATE="absent", FAKE_GH_FAIL="",
         )
 
+    def install_windows_asset(self, tag):
+        exe_name = f"send-minecraft-notifications-{tag.replace('/', '-')}-windows-x64.exe"
+        for path in self.assets.glob("*.exe"):
+            path.unlink()
+        exe = self.assets / exe_name
+        exe.write_bytes(exe_name.encode())
+        archive_name = "send-minecraft-notifications-windows-x64.zip"
+        archive = self.assets / archive_name
+        if not archive.exists():
+            archive.write_bytes(archive_name.encode())
+        sums = "".join(
+            f"{hashlib.sha256((self.assets / name).read_bytes()).hexdigest()}  {name}\n"
+            for name in (exe_name, archive_name)
+        )
+        (self.assets / "SHA256SUMS-windows-x64.txt").write_text(sums)
+
     def run_script(self, **environment):
         result = subprocess.run(
             ["bash", str(SCRIPT), str(self.assets)], cwd=self.root,
@@ -92,7 +107,7 @@ class PublishReleaseTests(unittest.TestCase):
         notes = json.loads(self.notes.read_text().splitlines()[0])["body"]
         self.assertIn("https://github.com/example/project/releases/download/1.2.3/", notes)
         self.assertIn("curl -fL -o send-minecraft-notifications-linux-x64", notes)
-        self.assertIn("curl.exe -fL -o smn-main-123abcd.exe", notes)
+        self.assertIn("curl.exe -fL -o send-minecraft-notifications-1.2.3-windows-x64.exe", notes)
 
     def test_draft_retry_uploads_before_publishing(self):
         result, commands = self.run_script(FAKE_GH_STATE="true")
@@ -140,6 +155,7 @@ class PublishReleaseTests(unittest.TestCase):
         for tag in ("1.2.3-rc.1", "v1.2.3-beta.1", "v1.0.0-beta0"):
             with self.subTest(tag=tag):
                 self.commands.unlink(missing_ok=True)
+                self.install_windows_asset(tag)
                 result, commands = self.run_script(TAG_NAME=tag)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(commands[-1][2], tag)
@@ -147,7 +163,7 @@ class PublishReleaseTests(unittest.TestCase):
                 self.assertIn("--latest=false", commands[-1])
 
     def test_multiple_executables_never_call_github(self):
-        (self.assets / "smn-feature-7654321.exe").write_bytes(b"second application executable")
+        (self.assets / "send-minecraft-notifications-1.2.3-feature-windows-x64.exe").write_bytes(b"second application executable")
         result, commands = self.run_script()
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("exactly one Windows EXE", result.stderr.decode())
@@ -159,13 +175,25 @@ class PublishReleaseTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(commands, [])
 
-    def test_overlong_executable_name_never_calls_github(self):
-        current = self.assets / "smn-main-123abcd.exe"
-        current.rename(self.assets / f"smn-{'a' * 30}-123abcd.exe")
-        result, commands = self.run_script()
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("exceeds 28 characters", result.stderr.decode())
-        self.assertEqual(commands, [])
+    def test_debug_or_wrong_version_executable_never_calls_github(self):
+        for wrong_name in ("smn-main-123abcd.exe", "send-minecraft-notifications-v9.9.9-windows-x64.exe"):
+            with self.subTest(name=wrong_name):
+                for current in self.assets.glob("*.exe"):
+                    current.rename(self.assets / wrong_name)
+                result, commands = self.run_script()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("does not match release tag", result.stderr.decode())
+                self.assertEqual(commands, [])
+                (self.assets / wrong_name).rename(
+                    self.assets / "send-minecraft-notifications-1.2.3-windows-x64.exe"
+                )
+
+    def test_release_asset_can_exceed_local_debug_filename_limit(self):
+        long_tag = "v1.2345678901234567890-beta.123"
+        self.install_windows_asset(long_tag)
+        result, commands = self.run_script(TAG_NAME=long_tag)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("--prerelease=true", commands[-1])
 
 
 if __name__ == "__main__":
