@@ -17,6 +17,39 @@ def default_config_path() -> Path:
     return Path.cwd() / ".env"
 
 
+def find_legacy_config() -> Path | None:
+    """Find a known Python checkout without scanning unrelated directories."""
+    def config_in(directory: Path) -> Path | None:
+        config = directory / ".env"
+        if config.is_file() and all(
+            (directory / marker).is_file()
+            for marker in ("src/main.py", "src/handlers/secrets.py")
+        ):
+            return config.resolve()
+        return None
+
+    # Running from an old checkout explicitly selects that installation.
+    working_config = config_in(Path.cwd())
+    if working_config is not None:
+        return working_config
+
+    executable_dir = Path(sys.executable).resolve().parent
+    candidates = {
+        config
+        for directory in (
+            executable_dir / "Send-Minecraft-notifications",
+            executable_dir.parent / "Send-Minecraft-notifications",
+        )
+        if (config := config_in(directory)) is not None
+    }
+    if len(candidates) > 1:
+        raise ValueError(
+            "旧Python版が複数見つかりました。--config <旧フォルダー> で指定してください。\n"
+            "Multiple legacy installations found; select one with --config <old-directory>."
+        )
+    return next(iter(candidates), None)
+
+
 def translation_path(config_path: Path) -> Path:
     custom = config_path.parent / "translations" / "ja_jp.json"
     return custom if custom.is_file() else resource_path("translations/ja_jp.json")

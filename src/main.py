@@ -8,7 +8,7 @@ import traceback
 from handlers.secrets import BotEnv
 from message.i18n import I18n
 from server.server import Server
-from utils.runtime import create_config, default_config_path, translation_path
+from utils.runtime import create_config, default_config_path, find_legacy_config, translation_path
 
 
 async def main(config_path: Path | None = None) -> int:
@@ -30,15 +30,31 @@ async def main(config_path: Path | None = None) -> int:
 
 def cli(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Forward Minecraft server logs to Discord via a webhook.")
-    parser.add_argument("--config", type=Path, help="Path to .env (default: beside executable, or current directory in source mode)")
+    parser.add_argument(
+        "--config", type=Path,
+        help="Path to .env or an existing configuration directory; standalone builds also detect nearby legacy Python installations",
+    )
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--init-config", action="store_true", help="Create an example .env without overwriting existing settings")
     mode.add_argument("--check-config", action="store_true", help="Validate settings and translations without sending notifications")
     args = parser.parse_args(argv)
-    config_path = (args.config or default_config_path()).resolve()
     try:
+        config_path = (args.config or default_config_path()).resolve()
+        if args.config is not None and config_path.is_dir():
+            config_path = config_path / ".env"
+        if (
+            args.config is None
+            and not args.init_config
+            and getattr(sys, "frozen", False)
+            and not config_path.exists()
+        ):
+            legacy_config = find_legacy_config()
+            if legacy_config is not None:
+                config_path = legacy_config
+                print(f"旧Python版の設定を使用します / Legacy configuration: {config_path}")
         if args.init_config or (
-            getattr(sys, "frozen", False)
+            args.config is None
+            and getattr(sys, "frozen", False)
             and not args.check_config
             and not config_path.exists()
             and "WEBHOOK_URL" not in os.environ

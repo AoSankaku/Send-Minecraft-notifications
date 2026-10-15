@@ -57,6 +57,20 @@ curl.exe -fL -o smn-main-cf422f8.exe `
 ```
 
 `-L` は GitHub の転送先を追い、`-o` はファイルに保存し、`-f` は HTTP エラー時に失敗させます。既存の `.env` は上書きされません。設定検査では Discord へ送信しません。
+
+### 旧Python版の .env を引き継ぐ
+
+旧版の `.env` を `--config` で直接指定して起動できます。元の設定は変更されず、`TARGET_DIR` と `PLUGIN_DIR` の相対パスも旧 `.env` のフォルダーを基準に解決されます。設定を検査した後、同じ引数を付けて起動してください。パスは実際の旧版の場所へ置き換えます。
+
+```sh
+./send-minecraft-notifications-linux-x64 --config /path/to/Send-Minecraft-notifications/.env --check-config
+./send-minecraft-notifications-linux-x64 --config /path/to/Send-Minecraft-notifications/.env
+```
+
+```powershell
+.\smn-main-cf422f8.exe --config 'C:\path\to\Send-Minecraft-notifications\.env' --check-config
+.\smn-main-cf422f8.exe --config 'C:\path\to\Send-Minecraft-notifications\.env'
+```
 <!-- smn:install-ja:end -->
 
 ### 設定ファイルの場所を指定する（Windows / Linux 共通）
@@ -66,6 +80,14 @@ curl.exe -fL -o smn-main-cf422f8.exe `
 `TARGET_DIR` を相対パスで書いた場合は、`.env` ファイルがあるフォルダーからの相対パスとして解決されます。サーバー起動直後に `logs/latest.log` がまだ作られていなくても、ファイルが現れるまで待機します。
 
 `.env` には Webhook URL が含まれるため、公開や共有をしないでください。リリース ZIP に含まれるのは `.env.example` のみです。
+
+### 旧Python版の自動検出（v1.0.0-beta0 の次のビルド以降）
+
+実行ファイルの横に `.env` があれば、その設定をそのまま使います。旧Python版のフォルダーに新しい実行ファイルを置く方法でも引き継げます。
+
+実行ファイルの横に `.env` がない場合、作業フォルダーの旧Python版を優先して検出します。そこに見つからなければ、実行ファイルと同じフォルダー内、またはその親フォルダー内にある `Send-Minecraft-notifications` を確認します。旧版のソースと `.env` が残っているフォルダーが対象です。複数の候補が見つかった場合は自動選択せず、`--config <旧フォルダー>` または `--config <旧.envのパス>` で指定してください。別の場所にある旧版も同じ方法で指定できます。
+
+読み込んだ旧 `.env` の場所は起動時に表示します。旧ファイルのコピーや上書きは行わず、新しく追加された未設定の項目には既定値を使います。明示した `--config` は自動検出より優先されます。`--init-config` を指定した場合は、自動検出せず新しい雛形を作成します。公開済みの `v1.0.0-beta0` では、上のコマンドのように旧 `.env` のファイルパスを指定してください。
 
 ## 通知とメッセージ設定
 
@@ -178,9 +200,25 @@ Open the generated `.env` in an editor and set `WEBHOOK_URL` and `TARGET_DIR`, t
 ```
 
 `-L` follows GitHub redirects, `-o` saves to a file, and `-f` fails on HTTP errors. Existing `.env` files are preserved. Configuration checks do not send Discord notifications.
+
+### Reuse a legacy Python .env
+
+Pass the old `.env` to `--config` to reuse it without modifying it. Relative `TARGET_DIR` and `PLUGIN_DIR` paths remain based on the old `.env` directory. Validate first, then start with the same argument each time. Replace the example paths with your old installation's location.
+
+```sh
+./send-minecraft-notifications-linux-x64 --config /path/to/Send-Minecraft-notifications/.env --check-config
+./send-minecraft-notifications-linux-x64 --config /path/to/Send-Minecraft-notifications/.env
+```
+
+```powershell
+.\smn-main-cf422f8.exe --config 'C:\path\to\Send-Minecraft-notifications\.env' --check-config
+.\smn-main-cf422f8.exe --config 'C:\path\to\Send-Minecraft-notifications\.env'
+```
 <!-- smn:install-en:end -->
 
 ### Additional configuration
+
+Builds after `v1.0.0-beta0` automatically reuse an existing `.env` beside the executable. If none exists there, they check the working directory for a legacy Python checkout, then check folders named `Send-Minecraft-notifications` inside the executable's directory and its parent. The old source files and `.env` must still be present. If several neighboring checkouts are found, select one with `--config <old-directory>` or `--config <old-.env-path>`. Explicit `--config` takes priority. The selected legacy file's path is printed at startup; its contents are never copied or overwritten. Missing new settings use defaults. `--init-config` creates a new template instead of detecting old settings. For the published `v1.0.0-beta0`, pass the old `.env` file path as shown above.
 
 System/server notifications use the original [info icon](assets/info_icon_dot.png) from this repository's fixed `main/assets/info_icon_dot.png` Raw URL by default; no player's skin is used as the default. Leave `SENDER_ICON` and `SENDER_ICON_PLAYER` empty or unset to use it. Administrators can set `SENDER_ICON` to a custom image URL, or leave it empty and set `SENDER_ICON_PLAYER` to a Minecraft player name to use that player's icon through `PLAYER_ICON_API`. An explicit image URL takes priority over a player name. Existing icon URLs remain supported; clear the old URL to switch to the default. Player chat continues to use each player's own icon. Restart the notifier after changing settings. The default image must be published to `main` before its Raw URL is available.
 

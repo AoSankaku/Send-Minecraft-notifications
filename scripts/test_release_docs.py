@@ -42,6 +42,8 @@ class DocumentationTests(unittest.TestCase):
         self.assertIn("curl.exe -fL -o", updated)
         self.assertIn("sha256sum --check --ignore-missing", updated)
         self.assertIn("--check-config", updated)
+        self.assertIn("--config /path/to/Send-Minecraft-notifications/.env", updated)
+        self.assertIn("--config 'C:\\path\\to\\Send-Minecraft-notifications\\.env'", updated)
         self.assertEqual(release_docs.render_readme(updated, TAG, REPOSITORY, EXE), updated)
 
     def test_new_release_replaces_all_previous_managed_urls(self):

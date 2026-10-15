@@ -98,6 +98,31 @@ curl.exe -fL -o {windows_exe} `
 ```
 
 {curl_help}
+
+{legacy_configuration_section(windows_exe, language)}
+"""
+
+
+def legacy_configuration_section(windows_exe: str, language: str) -> str:
+    if language == "ja":
+        title = "旧Python版の .env を引き継ぐ"
+        description = "旧版の `.env` を `--config` で直接指定して起動できます。元の設定は変更されず、`TARGET_DIR` と `PLUGIN_DIR` の相対パスも旧 `.env` のフォルダーを基準に解決されます。設定を検査した後、同じ引数を付けて起動してください。パスは実際の旧版の場所へ置き換えます。"
+    else:
+        title = "Reuse a legacy Python .env"
+        description = "Pass the old `.env` to `--config` to reuse it without modifying it. Relative `TARGET_DIR` and `PLUGIN_DIR` paths remain based on the old `.env` directory. Validate first, then start with the same argument each time. Replace the example paths with your old installation's location."
+    return f"""### {title}
+
+{description}
+
+```sh
+./{PRODUCT}-linux-x64 --config /path/to/Send-Minecraft-notifications/.env --check-config
+./{PRODUCT}-linux-x64 --config /path/to/Send-Minecraft-notifications/.env
+```
+
+```powershell
+.\\{windows_exe} --config 'C:\\path\\to\\Send-Minecraft-notifications\\.env' --check-config
+.\\{windows_exe} --config 'C:\\path\\to\\Send-Minecraft-notifications\\.env'
+```
 """
 
 

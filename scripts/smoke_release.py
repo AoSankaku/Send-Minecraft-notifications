@@ -59,7 +59,29 @@ def main() -> None:
         custom_translation.write_text("[]", encoding="utf-8")
         run("--config", str(external), "--check-config", expected=1)
 
-    print("Standalone smoke check passed: help, first run, config persistence, bundled data, validation.")
+        # A nearby old Python checkout can supply settings to the standalone
+        # binary. Check both discovery and an explicitly selected directory.
+        legacy = root / "Send-Minecraft-notifications"
+        for relative in ("src/main.py", "src/handlers/secrets.py"):
+            marker = legacy / relative
+            marker.parent.mkdir(parents=True, exist_ok=True)
+            marker.write_text("# Legacy installation\n", encoding="utf-8")
+        legacy_config = legacy / ".env"
+        legacy_config.write_text(
+            f"WEBHOOK_URL={url}\nTARGET_DIR=./server/logs\nPLUGIN_DIR=./plugins\n",
+            encoding="utf-8-sig",
+        )
+        original = legacy_config.read_bytes()
+        config.unlink()
+        detected = run("--check-config")
+        assert "Legacy configuration:" in detected
+        assert str(legacy_config) in detected
+        assert "No notifications were sent" in detected
+        assert "No notifications were sent" in run("--config", str(legacy), "--check-config")
+        assert legacy_config.read_bytes() == original and not config.exists()
+        assert url not in detected
+
+    print("Standalone smoke check passed: help, first run, config persistence, bundled data, validation, legacy settings.")
 
 
 if __name__ == "__main__":
