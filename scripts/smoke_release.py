@@ -75,7 +75,10 @@ def main() -> None:
         config.unlink()
         detected = run("--check-config")
         assert "Legacy configuration:" in detected
-        assert str(legacy_config) in detected
+        reported_path = detected.split("Legacy configuration:", 1)[1].splitlines()[0].strip()
+        # Windows TEMP can use an 8.3 path while Path.resolve() reports its
+        # long form. Verify file identity rather than its spelling.
+        assert Path(reported_path).samefile(legacy_config), f"Unexpected config path: {reported_path}"
         assert "No notifications were sent" in detected
         assert "No notifications were sent" in run("--config", str(legacy), "--check-config")
         assert legacy_config.read_bytes() == original and not config.exists()
