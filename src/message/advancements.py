@@ -52,7 +52,7 @@ def _bundled_catalog() -> dict:
 class AdvancementTranslator:
     def __init__(
         self, locale="ja", *, enabled=True, dictionary=None, minecraft_version="",
-        catalog_path: Path | None = None,
+        catalog_path: Path | None = None, mod_advancements=None, mod_achievements=None,
     ):
         self.locale = normalize_locale(locale)
         self.enabled = enabled
@@ -76,6 +76,10 @@ class AdvancementTranslator:
                 # Missing keys remain candidates: an identical display name
                 # may refer to a different, untranslated advancement.
                 candidates[legacy][english].add(translated.get(key, english))
+        for english, translations in (mod_advancements or {}).items():
+            candidates[False][english].update(translations)
+        for english, translations in (mod_achievements or {}).items():
+            candidates[True][english].update(translations)
         self.names = {
             legacy: {english: next(iter(names)) for english, names in values.items() if len(names) == 1}
             for legacy, values in candidates.items()

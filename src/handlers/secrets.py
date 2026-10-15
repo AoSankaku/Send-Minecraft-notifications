@@ -77,6 +77,9 @@ def _validate_env(name: Self, value: str) -> str | None:
                 validate_dictionary(json.loads(value))
             except (TypeError, ValueError):
                 return None
+        case BotEnv.TranslationCacheDir:
+            if not value.strip():
+                return None
         case BotEnv.JapanizeDictionary:
             try:
                 dictionary = json.loads(value)
@@ -163,6 +166,8 @@ class BotEnv(StrEnum):
     AdvancementTranslationEnabled = "ADVANCEMENT_TRANSLATION_ENABLED"
     AdvancementDictionary = "ADVANCEMENT_DICTIONARY"
     MinecraftVersion = "MINECRAFT_VERSION"
+    ModsDir = "MODS_DIR"
+    TranslationCacheDir = "TRANSLATION_CACHE_DIR"
 
     @staticmethod
     def init(env_path: str | Path | None = None):
@@ -171,10 +176,15 @@ class BotEnv(StrEnum):
         _env_data.clear()
         for _e in BotEnv:
             _loadEnvWithValidate(_e, values)
-        for name in (BotEnv.TargetDir, BotEnv.PluginDir):
+        for name in (BotEnv.TargetDir, BotEnv.PluginDir, BotEnv.ModsDir, BotEnv.TranslationCacheDir):
             value = name.get()
             if value:
-                _env_data[name.value] = str((config_path.parent / value).resolve())
+                configured = config_path.parent / value
+                # Preserve the final component so the MOD cache loader can
+                # reject symlink directories before opening/writing them.
+                _env_data[name.value] = str(configured.absolute() if name in (
+                    BotEnv.ModsDir, BotEnv.TranslationCacheDir,
+                ) else configured.resolve())
 
     def getBool(self) -> bool:
         _s = _env_data[self.value]

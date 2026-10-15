@@ -12,6 +12,7 @@ from message.parser import LogParser, combine_chat_records
 from message.chat_japanese import JapaneseChatFormatter
 from message.webhook import DiscordWebhook
 from message.advancements import AdvancementTranslator
+from message.log_translations import load_log_translators
 from message.model import MessageType
 from message.constant import EventIds
 from message.i18n import I18n
@@ -39,6 +40,7 @@ class Server:
         self.parser: LogParser
         self.i18n: I18n
         self.advancement_translator: AdvancementTranslator | None = None
+        self.death_translator = None
         self.chat_japanese = JapaneseChatFormatter()
         pass
     
@@ -58,12 +60,11 @@ class Server:
         locale = BotEnv.Language.get()
         self.i18n = I18n.for_config(config_path, locale)
         self.logger.info("Notification language loaded.", language=locale)
-        self.advancement_translator = AdvancementTranslator(
-            locale=locale,
-            enabled=BotEnv.AdvancementTranslationEnabled.getBool(),
-            dictionary=json.loads(BotEnv.AdvancementDictionary.get()),
-            minecraft_version=BotEnv.MinecraftVersion.get(),
-        )
+        self.advancement_translator, self.death_translator, mod_catalog = load_log_translators()
+        if mod_catalog is not None:
+            self.logger.info("MOD translation cache loaded.", reused=mod_catalog.cache_hits, parsed=mod_catalog.cache_misses)
+            for warning in mod_catalog.warnings:
+                self.logger.warning(warning)
         self.logger.info("Translator initialized.")
         
         self.webhook = DiscordWebhook(
@@ -83,6 +84,7 @@ class Server:
             json.loads(BotEnv.OtherIgnoreNames.get()),
             public_channels=json.loads(BotEnv.JapanizePublicChannels.get()),
             advancement_translator=self.advancement_translator,
+            death_translator=self.death_translator,
         )
         self.logger.info("LogParser initialized.")
         
@@ -145,7 +147,7 @@ class Server:
             result.text = self.replace_additional_data(result.milestone_template).replace(
                 result.milestone_placeholder, result.milestone_title
             )
-        else:
+        elif not result.literal_text:
             result.text = self.replace_additional_data(result.text)
         
         self.logger.debug("Sending", message=result.text)

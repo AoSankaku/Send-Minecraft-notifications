@@ -136,10 +136,12 @@ class LogParser(RegexParser):
         *,
         public_channels=(),
         advancement_translator=None,
+        death_translator=None,
     ):
         super().__init__()
         self.public_channels = {channel.casefold() for channel in public_channels}
         self.advancement_translator = advancement_translator
+        self.death_translator = death_translator
         ignore_names = {name.casefold() for name in ignore_names}
 
         # player issue command
@@ -283,6 +285,13 @@ class LogParser(RegexParser):
             if result is not None:
                 result.event_id = event_id
             return result
+        if self.death_translator is not None:
+            death = self.death_translator.translate(body)
+            if death is not None:
+                return MessageData(
+                    MessageType.Player, "#f8f", ":skull_crossbones: " + death.text,
+                    death.player, event_id=EventIds.ON_DEATH, literal_text=True,
+                )
         return super().parse(original_line, translator)
 
     def parse(self, text: str, translator: I18n = None) -> MessageData | None:

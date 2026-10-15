@@ -1,4 +1,5 @@
 import json
+import hashlib
 import os
 from pathlib import Path
 import zipfile
@@ -77,7 +78,7 @@ def test_all_supported_locales_are_extracted_into_locale_independent_cache(tmp_p
     mods = tmp_path / "mods"
     resources = _base_resources()
     for code, minecraft_locale in SUPPORTED_LOCALES.items():
-        if code == "ja":
+        if code in {"ja", "en"}:
             continue
         resources[f"assets/create/lang/{minecraft_locale}.json"] = json.dumps({
             "create.advancement.cog_in_the_machine": f"{code} title",
@@ -109,18 +110,20 @@ def test_missing_target_translation_keeps_english_candidate(tmp_path):
     catalog = load_mod_catalog(mods, tmp_path / "cache", "ja")
 
     assert catalog.advancements["Cog in the Machine"] == {"Cog in the Machine"}
-    assert catalog.deaths == [
+    assert set(catalog.deaths) == {
         ("%1$s was processed by Crushing Wheels", None),
         ("%1$s fell from a great height", None),
-    ]
+    }
 
 
 def test_legacy_lang_resources_are_case_insensitive_and_interpolations_survive(tmp_path):
     mods = tmp_path / "mods"
     _jar(mods / "old-mod.JAR", {
         "assets/oldmod/lang/en_US.LANG": "oldmod.advancement.first=First Steps\n"
+        "oldmod.achievement.first=First Achievement\n"
         "death.attack.oldmod=%1$s was zapped\n",
         "assets/oldmod/lang/ja_JP.lang": "oldmod.advancement.first=最初の一歩\n"
+        "oldmod.achievement.first=最初の実績\n"
         "death.attack.oldmod=%1$sは感電した\n",
         "data/oldmod/advancement/first.json": json.dumps({
             "display": {"title": {"translate": "oldmod.advancement.first"}},
@@ -129,7 +132,11 @@ def test_legacy_lang_resources_are_case_insensitive_and_interpolations_survive(t
 
     catalog = load_mod_catalog(mods, tmp_path / "cache", "ja")
 
-    assert catalog.advancements == {"First Steps": {"最初の一歩"}}
+    assert catalog.advancements == {
+        "First Steps": {"最初の一歩"},
+        "First Achievement": {"最初の実績"},
+    }
+    assert catalog.achievements == {"First Achievement": {"最初の実績"}}
     assert ("%1$s was zapped", "%1$sは感電した") in catalog.deaths
 
 
@@ -193,6 +200,138 @@ def test_duplicate_titles_and_death_templates_preserve_ambiguity(tmp_path):
     assert catalog.deaths.count(("%1$s met a machine", "%1$sは機械に倒された")) == 1
 
 
+def test_same_locale_resources_in_distinct_namespaces_keep_title_and_death_conflicts(tmp_path):
+    mods = tmp_path / "mods"
+    _jar(mods / "multi-namespace.jar", {
+        "assets/one/lang/en_us.json": json.dumps({
+            "one.advancement.first": "Same Title",
+            "shared.advancement.fork": "Shared Title",
+            "death.attack.one": "%1$s met the same machine",
+        }),
+        "assets/one/lang/ja_jp.json": json.dumps({
+            "one.advancement.first": "一つ目",
+            "shared.advancement.fork": "共有の訳一",
+            "death.attack.one": "%1$sは機械に倒された一",
+        }),
+        "assets/two/lang/en_us.json": json.dumps({
+            "two.advancement.second": "Same Title",
+            "shared.advancement.fork": "Shared Title",
+            "death.attack.two": "%1$s met the same machine",
+        }),
+        "assets/two/lang/ja_jp.json": json.dumps({
+            "two.advancement.second": "二つ目",
+            "shared.advancement.fork": "共有の訳二",
+            "death.attack.two": "%1$sは機械に倒された二",
+        }),
+    })
+
+    catalog = load_mod_catalog(mods, tmp_path / "cache", "ja")
+
+    assert catalog.advancements["Same Title"] == {"一つ目", "二つ目"}
+    assert catalog.advancements["Shared Title"] == {"共有の訳一", "共有の訳二"}
+    assert ("%1$s met the same machine", "%1$sは機械に倒された一") in catalog.deaths
+    assert ("%1$s met the same machine", "%1$sは機械に倒された二") in catalog.deaths
+
+
+def test_translation_only_mod_can_supply_unique_keys_referenced_by_another_mod(tmp_path):
+    mods = tmp_path / "mods"
+    _jar(mods / "content.jar", {
+        "assets/content/lang/en_us.json": json.dumps({
+            "content.advancement.shared": "External Title",
+            "death.attack.external": "%1$s was crushed externally",
+        }),
+        "data/content/advancements/shared.json": json.dumps({
+            "display": {"title": {"translate": "content.advancement.shared"}},
+        }),
+    })
+    _jar(mods / "translations.jar", {
+        "assets/translations/lang/ja_jp.json": json.dumps({
+            "content.advancement.shared": "外部の目標",
+            "death.attack.external": "%1$sは外部で粉砕された",
+        }),
+    })
+
+    catalog = load_mod_catalog(mods, tmp_path / "cache", "ja")
+
+    assert catalog.advancements["External Title"] == {"外部の目標"}
+    assert ("%1$s was crushed externally", "%1$sは外部で粉砕された") in catalog.deaths
+
+
+def test_local_translations_union_with_translation_only_provider_candidates(tmp_path):
+    mods = tmp_path / "mods"
+    _jar(mods / "content.jar", {
+        "assets/content/lang/en_us.json": json.dumps({
+            "content.advancement.shared": "External Title",
+            "death.attack.external": "%1$s was crushed externally",
+        }),
+        "assets/content/lang/ja_jp.json": json.dumps({
+            "content.advancement.shared": "ローカル訳",
+            "death.attack.external": "%1$sはローカルで粉砕された",
+        }),
+    })
+    _jar(mods / "translations.jar", {
+        "assets/translations/lang/ja_jp.json": json.dumps({
+            "content.advancement.shared": "追加の訳",
+            "death.attack.external": "%1$sは追加の訳で粉砕された",
+        }),
+    })
+
+    catalog = load_mod_catalog(mods, tmp_path / "cache", "ja")
+
+    assert catalog.advancements["External Title"] == {"ローカル訳", "追加の訳"}
+    assert ("%1$s was crushed externally", "%1$sはローカルで粉砕された") in catalog.deaths
+    assert ("%1$s was crushed externally", "%1$sは追加の訳で粉砕された") in catalog.deaths
+
+
+def test_same_key_with_different_english_templates_is_not_cross_paired(tmp_path):
+    mods = tmp_path / "mods"
+    _jar(mods / "crushing.jar", {
+        "assets/one/lang/en_us.json": json.dumps({
+            "death.attack.shared": "%1$s was crushed",
+            "one.advancement.shared": "The Crusher",
+        }),
+        "assets/one/lang/ja_jp.json": json.dumps({
+            "death.attack.shared": "%1$sは粉砕された",
+            "one.advancement.shared": "粉砕者",
+        }),
+    })
+    _jar(mods / "zapping.jar", {
+        "assets/two/lang/en_us.json": json.dumps({
+            "death.attack.shared": "%1$s was zapped",
+            "two.advancement.shared": "The Zap",
+        }),
+    })
+
+    catalog = load_mod_catalog(mods, tmp_path / "cache", "ja")
+
+    assert ("%1$s was crushed", "%1$sは粉砕された") in catalog.deaths
+    assert ("%1$s was zapped", None) in catalog.deaths
+    assert catalog.advancements["The Crusher"] == {"粉砕者"}
+    assert catalog.advancements["The Zap"] == {"The Zap"}
+
+
+def test_deep_untrusted_json_warns_and_valid_resources_still_load(tmp_path):
+    import hashlib
+
+    mods = tmp_path / "mods"
+    resources = _base_resources()
+    nested = "[" * 1500 + '{"translate":"deep.advancement.title"}' + "]" * 1500
+    resources["data/deep/advancements/nested.json"] = '{"display":{"title":' + nested + "}}"
+    jar = _jar(mods / "mod.jar", resources)
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    cache_data = '{"schema":3,"nested":' + ("[" * 1500) + "0" + ("]" * 1500) + "}"
+    (cache / (hashlib.sha256(jar.read_bytes()).hexdigest() + ".json")).write_text(
+        cache_data, encoding="utf-8",
+    )
+
+    catalog = load_mod_catalog(mods, cache, "ja")
+
+    assert catalog.advancements["Cog in the Machine"] == {"工場を拡大せよ！"}
+    assert any("invalid translation cache" in warning for warning in catalog.warnings)
+    assert any("nested.json" in warning for warning in catalog.warnings)
+
+
 def test_cache_hit_does_not_open_archive_and_content_hash_invalidates_same_size_same_mtime(tmp_path, monkeypatch):
     mods = tmp_path / "mods"
     jar = _jar(mods / "mod.jar", _base_resources())
@@ -223,6 +362,21 @@ def test_content_change_rebuilds_cache_even_if_size_and_mtime_are_preserved(tmp_
 
     assert catalog.cache_misses == 1
     assert catalog.advancements == {"Cog in the Machine": {"B title"}}
+
+
+def test_jar_changed_during_extraction_is_not_cached_or_used(tmp_path, monkeypatch):
+    mods = tmp_path / "mods"
+    _jar(mods / "mod.jar", _base_resources())
+    digests = iter(["a" * 64, "b" * 64])
+    monkeypatch.setattr("message.mod_catalog._digest", lambda path: next(digests))
+    cache = tmp_path / "cache"
+
+    catalog = load_mod_catalog(mods, cache, "ja")
+
+    assert catalog.advancements == {}
+    assert catalog.cache_misses == 1
+    assert any("changed during extraction" in warning for warning in catalog.warnings)
+    assert list(cache.glob("*.json")) == []
 
 
 def test_removed_jar_stops_contributing_without_deleting_inactive_cache(tmp_path):
@@ -317,6 +471,29 @@ def test_entry_and_archive_limits_skip_oversized_resources_without_extracting_th
     assert any("limit" in warning.lower() for warning in catalog.warnings)
 
 
+def test_total_selected_resource_bytes_and_archive_member_count_are_bounded(tmp_path, monkeypatch):
+    mods = tmp_path / "mods"
+    _jar(mods / "many-selected.jar", {
+        "assets/mod/lang/en_us.json": "123456",
+        "assets/mod/lang/ja_jp.json": "abcdef",
+    })
+    monkeypatch.setattr("message.mod_catalog._MAX_JAR_SELECTED_BYTES", 10)
+
+    catalog = load_mod_catalog(mods, tmp_path / "cache", "ja")
+
+    assert catalog.advancements == {}
+    assert any("total size limit" in warning for warning in catalog.warnings)
+
+    members_mods = tmp_path / "members"
+    _jar(members_mods / "many-members.jar", {"one": "1", "two": "2"})
+    monkeypatch.setattr("message.mod_catalog._MAX_ARCHIVE_MEMBERS", 1)
+
+    members_catalog = load_mod_catalog(members_mods, tmp_path / "member-cache", "ja")
+
+    assert members_catalog.advancements == {}
+    assert any("member count exceeds limit" in warning for warning in members_catalog.warnings)
+
+
 def test_cache_directory_and_cache_file_symlinks_are_rejected(tmp_path):
     mods = tmp_path / "mods"
     _jar(mods / "mod.jar", _base_resources())
@@ -330,6 +507,23 @@ def test_cache_directory_and_cache_file_symlinks_are_rejected(tmp_path):
 
     with pytest.raises(ValueError, match="cache|CACHE"):
         load_mod_catalog(mods, cache_link, "ja")
+
+
+def test_cache_file_symlink_is_rejected(tmp_path):
+    mods = tmp_path / "mods"
+    jar = _jar(mods / "mod.jar", _base_resources())
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    cache_name = hashlib.sha256(jar.read_bytes()).hexdigest() + ".json"
+    target = tmp_path / "outside-cache.json"
+    target.write_text("{}", encoding="utf-8")
+    try:
+        (cache / cache_name).symlink_to(target)
+    except (OSError, NotImplementedError):
+        pytest.skip("Symlinks are unavailable in this environment")
+
+    with pytest.raises(ValueError, match="symlink"):
+        load_mod_catalog(mods, cache, "ja")
 
 
 def test_invalid_locale_is_rejected(tmp_path):

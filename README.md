@@ -157,6 +157,26 @@ ADVANCEMENT_DICTIONARY = { "The Factory Must Grow!" = "工場を拡大せよ！"
 
 言語データの取得元・更新手順は [Minecraft翻訳データ](translations/MINECRAFT_SOURCES.md) を参照してください。
 
+### MOD由来の進捗・死亡メッセージと翻訳キャッシュ
+
+`MODS_DIR` にサーバーの `mods` フォルダーを設定すると、起動時に直下のJARから言語ファイルと進捗定義を読み取ります。Createなど、MOD内に英語と選択言語の翻訳データがある進捗・目標・挑戦・旧実績名、および死亡メッセージに対応します。JARはZIP内のデータとして扱い、MinecraftやMODのJavaコードは実行しません。
+
+```toml
+LANGUAGE = "ja"
+MODS_DIR = "./mods"
+TRANSLATION_CACHE_DIR = "./translation-cache"
+```
+
+相対パスは設定ファイルがあるフォルダーを基準にします。別の場所のMODを読む場合は `MODS_DIR = 'D:\Minecraft\mods'` のように指定できます。`MODS_DIR = ""`（既定）ではMODを読み取らず、キャッシュも作成しません。
+
+指定したキャッシュフォルダーは自動作成されます。JARの内容のSHA-256ごとにJSONを保存し、次回は展開・解析済みのデータを再利用します。内容を変更したMODは起動時に再解析し、削除したMODのキャッシュは参照しません。同じサイズ・更新日時でも内容の変更を検出します。第二言語範囲までの全22言語のデータをまとめて保持するため、`LANGUAGE` の変更だけでJARを再解析する必要はありません。
+
+キャッシュには翻訳リソースを保存し、プレイヤーのチャット・ログ・Webhook URLは保存しません。キャッシュを削除しても次回起動時に再作成できます。削除済みMODなどの古いキャッシュファイルは自動削除しないため、必要なら通知プログラムを停止して整理してください。MODを入れ替えた場合は通知プログラムも再起動してください。
+
+死亡メッセージは `%1$s` / `%2$s` / `%3$s` または `%s` の差し込み値を保持して翻訳します。プレイヤー名、攻撃者名、独自アイテム名は原文を保ちます。公式Createリソースでは、`Wheels of Destruction` → `破壊ホイール` と、破砕ホイールによる死亡文の変換を確認しています。MOD側に選択言語の訳がない場合、複数の解釈ができる場合、差し込み値が一致しない訳の場合は原文を残します。`ADVANCEMENT_DICTIONARY` の手動指定は、MOD由来の進捗名でも優先します。
+
+壊れたJARや不正なリソースは警告し、読み取れる他のMODの処理を続けます。対応するのはJAR内の `.json` / 旧 `.lang` 言語リソースとデータ定義から特定できるメッセージです。外部リソースパックの翻訳、入れ子JAR、コードだけで動的生成される任意の診断ログまで自動翻訳する機能ではありません。設定確認とキャッシュ作成には、通知を送信しない `--check-config` を利用できます。
+
 ### ローマ字チャットの日本語表示（v1.0.0-beta1 の次のビルド以降）
 
 `send-minecraft-notifications.toml` に次を追加して再起動すると、Discordへ原文と日本語変換を併記します。既存の設定に追加しなければ無効のままです。
@@ -378,6 +398,16 @@ Translation uses bundled, official Minecraft language data offline, with no game
 Bundled source snapshots are `1.11.2`, `1.12.2`, `1.16.5`, `1.20.1`, `1.21.11`, and `26.3`; these are dictionary sources, not an automatically detected server version or a runtime compatibility matrix. The default `MINECRAFT_VERSION = ""` recognizes historical English aliases and uses the newest available wording for each translation key. Set a bundled version explicitly to use its exact translations. Unsupported explicit versions are configuration errors. Some older locales or entries have no official translation; missing translations remain unchanged. No complete coverage of arbitrary mods or custom log formats is promised.
 
 Administrator-written `SERVER_START_MESSAGE`, `SERVER_STOP_MESSAGE`, `SERVER_RESTART_MESSAGE`, and `TIPS_MESSAGES` stay as configured; change their text separately when needed. `JAPANIZE_*` chat conversion settings remain independent. A local `translations/<Minecraft-locale>.json` beside the config can override individual event templates; missing keys fall back to the bundled selected language and then English. See [data sources and maintenance](translations/MINECRAFT_SOURCES.md).
+
+### MOD resources and persistent translation cache
+
+Set `MODS_DIR = "./mods"` to scan direct child mod JARs at startup, and optionally set `TRANSLATION_CACHE_DIR = "./translation-cache"`. Both paths are relative to the configuration file. Empty `MODS_DIR` (the default) disables the scan and does not create a cache. JARs are read as ZIP data only; no Minecraft or Java/mod code runs. The application remains offline.
+
+Language JSON/legacy `.lang` files and advancement definitions identify mod advancement, goal, challenge, legacy achievement and death messages. Extracted resources for all 22 supported locales are stored in automatically created JSON cache files keyed by the JAR's content SHA-256. Restarting reuses unchanged extraction results; changed content is detected even when size and modification time match. Changing only `LANGUAGE` reuses the same extraction cache. Removed mods stop contributing translations; their unused cache files are left intact. Restart the notifier after modifying mods. The cache contains resource translations, not chat, player logs or webhook credentials, and can be deleted to force regeneration.
+
+Death templates support positional `%1$s`–`%3$s`, sequential `%s` and literal `%%`, retaining player/attacker/custom item names as literal values. Missing translations, conflicting interpretations or incompatible argument sets preserve the original. Exact `ADVANCEMENT_DICTIONARY` overrides take priority for mod titles too. Create's official resource data was checked for the “Wheels of Destruction” advancement and Crushing Wheels death message; this is resource verification, not a game/runtime test matrix.
+
+Malformed JARs/resources produce warnings while valid siblings continue. Nested JARs, translations supplied only by external resource packs and arbitrary diagnostics constructed entirely in code are outside this resource-based lookup. `--check-config` also validates the configured folders and prepares the cache without sending notifications.
 
 ### Additional configuration
 

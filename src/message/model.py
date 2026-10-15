@@ -22,3 +22,4 @@ class MessageData:
     milestone_title: str | None = None
     milestone_template: str | None = None
     milestone_placeholder: str | None = None
+    literal_text: bool = False

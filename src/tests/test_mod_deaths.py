@@ -88,3 +88,9 @@ def test_ambiguous_argument_boundaries_preserve_original():
 def test_long_untrusted_input_and_excessive_placeholders_do_not_match():
     translator = DeathTranslator([("%1$s a %2$s a %3$s", "%1$s %2$s %3$s")])
     assert translator.translate("Alice " + "a " * 20000) is None
+
+
+def test_translation_cannot_silently_discard_killer_or_item_arguments():
+    source = "Alice was slain by Bob using [Named Sword]"
+    translator = DeathTranslator([("%1$s was slain by %2$s using %3$s", "%1$sは死亡した")])
+    assert translator.translate(source).text == source

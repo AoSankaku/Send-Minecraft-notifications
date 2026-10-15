@@ -90,3 +90,12 @@ ADVANCEMENT_DICTIONARY = {}
 # 空欄では過去の英語名を認識し、同じキーの最新の収録訳を使います。
 # 同じ英語名が別のキーで異なる訳を持つ場合は原文を残します。
 MINECRAFT_VERSION = ""
+
+# Optional directory of installed mod JARs; empty disables scanning.
+# MODのJARがあるフォルダー。空欄では読み取りません。
+# JARs are read as data only. Relative paths are based on this config file.
+# JARはデータとして読み取り、Javaコードは実行しません。相対パスは設定基準です。
+MODS_DIR = ""
+# Automatically created cache of extracted MOD language/advancement resources.
+# MODの言語・進捗データを保存するキャッシュ。自動作成されます。
+TRANSLATION_CACHE_DIR = "./translation-cache"
