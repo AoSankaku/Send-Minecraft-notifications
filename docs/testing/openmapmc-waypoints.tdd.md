@@ -8,6 +8,8 @@ The local OpenMapMC Delta repository is `C:\Users\abcde\dev\minecraft\mods\odyss
 
 The authorized change was sent to its existing chat `設定画面にサーバー設定を追加` (`01a13ba3-cc27-7c80-9950-feb55cc334cd`), which owns that repository. The receiving chat confirmed the four source paths and began source-side tests/implementation. No OpenMapMC source files were edited by this notifier task.
 
+Source-side implementation then passed its creation-event checks in all four roots. As an integration check, the actual captured `OPENMAPMC_EVENT` records in `.task-work/shared-events-20261015/green-{1.20.1,1.21.1,26.1.2,26.2}.log` were fed into the notifier's real `LogParser` and selected Japanese `I18n`. All four were accepted as `on_shared_waypoint_created`, creator `Alice`, name `拠点`, dimension `minecraft:overworld`, coordinates `123, 64, -456`. This verifies the producer/consumer contract using produced logs, not only a separately written fixture. An additional harness log was also accepted. Source-side builds/deployment remain owned and reported by that chat.
+
 The agreed log body is `OPENMAPMC_EVENT ` followed by compact single-line JSON with `schema_version: 1`, `event: "shared_waypoint_created"`, UUID strings `waypoint_id` / `creator_uuid`, string fields `creator_name` / `name` / `dimension`, and finite numeric `x` / `y` / `z`. The source must log exactly once after successful CREATE persistence, never on rejected/failed creation, loading, snapshots, editing, deletion or personal waypoint operations. This is independent of MOD language-file extraction.
 
 ## RED / GREEN evidence
