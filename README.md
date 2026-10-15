@@ -9,7 +9,26 @@ Minecraft サーバーのログを監視し、起動・終了、プレイヤー�
 3. `.env` の `WEBHOOK_URL` に Discord Webhook URL を、`TARGET_DIR` に Minecraft サーバーのログフォルダーを設定します。
 4. 実行ファイルを再起動します。
 
-Ubuntu Server では Linux x64 版をダウンロードし、設定を書き込めるフォルダーに置いてください。Python のインストールは不要です。実行権限を付けて起動すると `.env` が作られます。
+### Ubuntu Server / Linux でのダウンロードと起動
+
+設定を書き込めるフォルダーへ移動し、Linux x64 版をダウンロードしてください。Python のインストールや ZIP の展開は不要です。以下は `v1.0.0-beta0` の例です。ほかのバージョンを使う場合は、[Releases](https://github.com/AoSankaku/Send-Minecraft-notifications/releases) でタグを確認し、URL 中の `v1.0.0-beta0` を置き換えてください。
+
+```sh
+curl -fL -o send-minecraft-notifications-linux-x64 \
+  https://github.com/AoSankaku/Send-Minecraft-notifications/releases/download/v1.0.0-beta0/send-minecraft-notifications-linux-x64
+```
+
+`-L` は GitHub の転送先を追い、`-o` は指定したファイル名で保存します。`-f` は HTTP エラー時に失敗させる指定です。
+
+任意で、実行前に同じリリースのチェックサムをダウンロードして整合性を確認できます。ZIP をダウンロードしていなくても検査できます。
+
+```sh
+curl -fL -o SHA256SUMS-linux-x64.txt \
+  https://github.com/AoSankaku/Send-Minecraft-notifications/releases/download/v1.0.0-beta0/SHA256SUMS-linux-x64.txt
+sha256sum --check --ignore-missing SHA256SUMS-linux-x64.txt
+```
+
+ダウンロードに成功したら、実行権限を付けて初回起動します。同じフォルダーに `.env` の雛形を作成して終了します。
 
 ```sh
 chmod +x ./send-minecraft-notifications-linux-x64
@@ -23,11 +42,7 @@ chmod +x ./send-minecraft-notifications-linux-x64
 ./send-minecraft-notifications-linux-x64
 ```
 
-単体ファイルとチェックサムをダウンロードした場合は、実行前に次のコマンドで整合性を確認できます。ZIP をダウンロードしていなくても検査できます。
-
-```sh
-sha256sum --check --ignore-missing SHA256SUMS-linux-x64.txt
-```
+### 設定ファイルの場所を指定する（Windows / Linux 共通）
 
 必要に応じて設定ファイルの場所を `--config <path>` で指定できます。`--init-config` は設定雛形を作成し、`--check-config` は設定を検査します。たとえば、Windows では次のように実行します。
 
@@ -101,7 +116,38 @@ uv run python scripts/build_release.py
 
 Download the Windows x64 `.exe` or Linux x64 binary from [Releases](https://github.com/AoSankaku/Send-Minecraft-notifications/releases). The standalone binary does not require Python, and you can run it without extracting a ZIP. On first run it creates a `.env` template beside itself. Set `WEBHOOK_URL` and `TARGET_DIR`, then run it again. Relative `TARGET_DIR` values are resolved from the folder containing `.env`. On Linux, run `chmod +x <binary>` first. The Linux build requires glibc 2.35 or newer. Other operating systems and architectures are not currently supported release targets.
 
-The Linux x64 binary has passed first-run setup and configuration smoke checks on Ubuntu 22.04 and 24.04 with Python removed from PATH. On Ubuntu Server, put it in a writable directory, run it once to create `.env`, edit `WEBHOOK_URL` and `TARGET_DIR`, then run `./send-minecraft-notifications-linux-x64 --check-config` before starting it again.
+### Ubuntu Server / Linux quick start
+
+The Linux x64 binary has passed first-run setup and configuration smoke checks on Ubuntu 22.04 and 24.04 with Python removed from PATH. In a writable directory, download the binary using the commands below. This example uses `v1.0.0-beta0`; replace that tag in the URLs to download another release. Python and ZIP extraction are not required.
+
+```sh
+curl -fL -o send-minecraft-notifications-linux-x64 \
+  https://github.com/AoSankaku/Send-Minecraft-notifications/releases/download/v1.0.0-beta0/send-minecraft-notifications-linux-x64
+```
+
+`-L` follows GitHub's redirects, `-o` saves the binary to a file, and `-f` fails on HTTP errors. Optionally verify its checksum before running it; the missing ZIP is ignored:
+
+```sh
+curl -fL -o SHA256SUMS-linux-x64.txt \
+  https://github.com/AoSankaku/Send-Minecraft-notifications/releases/download/v1.0.0-beta0/SHA256SUMS-linux-x64.txt
+sha256sum --check --ignore-missing SHA256SUMS-linux-x64.txt
+```
+
+After a successful download, make the file executable and run it once to create `.env` beside the binary:
+
+```sh
+chmod +x ./send-minecraft-notifications-linux-x64
+./send-minecraft-notifications-linux-x64
+```
+
+Edit `WEBHOOK_URL` and `TARGET_DIR` in `.env`. Set `TARGET_DIR` to your Minecraft server's log directory. Validate the settings, then start the notifier again:
+
+```sh
+./send-minecraft-notifications-linux-x64 --check-config
+./send-minecraft-notifications-linux-x64
+```
+
+### Additional configuration
 
 System/server notifications use the original [info icon](assets/info_icon_dot.png) from this repository's fixed `main/assets/info_icon_dot.png` Raw URL by default; no player's skin is used as the default. Leave `SENDER_ICON` and `SENDER_ICON_PLAYER` empty or unset to use it. Administrators can set `SENDER_ICON` to a custom image URL, or leave it empty and set `SENDER_ICON_PLAYER` to a Minecraft player name to use that player's icon through `PLAYER_ICON_API`. An explicit image URL takes priority over a player name. Existing icon URLs remain supported; clear the old URL to switch to the default. Player chat continues to use each player's own icon. Restart the notifier after changing settings. The default image must be published to `main` before its Raw URL is available.
 
