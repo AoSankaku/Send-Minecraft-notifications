@@ -115,3 +115,25 @@ def test_newline_normalization_preserves_other_escapes():
     assert normalize_message_newlines(r"日本語\n\t\u3042") == "日本語\n" + r"\t\u3042"
     assert normalize_message_newlines(r"literal\\n") == r"literal\n"
     assert normalize_message_newlines("one\r\ntwo\nthree") == "one\ntwo\nthree"
+
+
+def test_legacy_config_defaults_leave_japanese_conversion_disabled(tmp_path, monkeypatch):
+    monkeypatch.setenv("WEBHOOK_URL", "https://discord.com/api/webhooks/123456789012345678/" + "test-token" * 6)
+    BotEnv.init(tmp_path / ".env")
+    assert not BotEnv.JapanizeEnabled.getBool()
+    assert BotEnv.JapanizeMode.get() == "auto"
+    assert json.loads(BotEnv.JapanizeDictionary.get()) == {}
+    assert json.loads(BotEnv.JapanizePublicChannels.get()) == []
+
+
+@pytest.mark.parametrize("name,value", [
+    ("JAPANIZE_ENABLED", "yes"), ("JAPANIZE_MODE", "online"),
+    ("JAPANIZE_DICTIONARY", '[]'), ("JAPANIZE_DICTIONARY", '{"word": 1}'),
+    ("JAPANIZE_PUBLIC_CHANNELS", '"global"'), ("JAPANIZE_PUBLIC_CHANNELS", '["Alice -> Bob"]'),
+    ("JAPANIZE_SERVER_FORMAT", '{original}'),
+])
+def test_invalid_japanese_settings_report_only_the_setting_name(tmp_path, monkeypatch, name, value):
+    monkeypatch.setenv("WEBHOOK_URL", "https://discord.com/api/webhooks/123456789012345678/" + "test-token" * 6)
+    monkeypatch.setenv(name, value)
+    with pytest.raises(ValueError, match=name):
+        BotEnv.init(tmp_path / ".env")

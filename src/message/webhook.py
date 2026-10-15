@@ -11,6 +11,20 @@ DEFAULT_SERVER_ICON_URL = (
 )
 
 
+def _player_message_chunks(text: str):
+    # Count astral characters as two units, so chunks also fit clients/API
+    # implementations that measure Discord's 2000-character limit as UTF-16.
+    start = 0
+    units = 0
+    for index, character in enumerate(text):
+        cost = 2 if ord(character) > 0xFFFF else 1
+        if units + cost > 2000:
+            yield text[start:index]
+            start, units = index, 0
+        units += cost
+    yield text[start:]
+
+
 class DiscordWebhook:
     def __init__(
         self,
@@ -95,12 +109,13 @@ class DiscordWebhook:
         await self._send_with_retry(msg, tts=False)
 
     async def sendPlayerMessage(self, msg: str, userid: str):
-        await self._send_with_retry(
-            msg,
-            avatar_url=urljoin(self.avatar_url_base, userid),
-            username=userid,
-            tts=False,
-        )
+        for chunk in _player_message_chunks(msg):
+            await self._send_with_retry(
+                chunk,
+                avatar_url=urljoin(self.avatar_url_base, userid),
+                username=userid,
+                tts=False,
+            )
 
     async def sendServerMessage(self, msg: str):
         await self._send_with_retry(

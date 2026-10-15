@@ -95,6 +95,52 @@ curl.exe -fL -o smn-main-0ff73d1.exe `
 - `.env` のテンプレートで文字列として書いた `\n` は改行として送信されます。
 - メッセージテンプレートなど、追加の設定項目は `.env.example` を参照してください。使わない任意項目は初期値のままにできます。
 
+### ローマ字チャットの日本語表示（v1.0.0-beta1 の次のビルド以降）
+
+`.env` に次を追加して再起動すると、Discordへ原文と日本語変換を併記します。既存の設定に追加しなければ無効のままです。
+
+```dotenv
+JAPANIZE_ENABLED=true
+JAPANIZE_MODE=auto
+```
+
+表示例（プレイヤー名・アイコンはそのまま使用）:
+
+```text
+konnichiha
+↳ こんにちは
+```
+
+| モード | 動作 |
+| --- | --- |
+| `auto`（既定） | 同じ公開チャットのログにあるサーバーの変換結果を優先し、なければローカル変換します。 |
+| `local` | サーバーが併記した変換結果があっても、原文からこのツールで変換します。 |
+| `server` | ログにある変換結果だけを利用します。なければ原文だけを送信します。 |
+
+独自変換はローマ字からひらがなへの変換で、API、翻訳サービス、オンライン辞書へ本文を送りません。一般的なかな漢字変換は行いませんが、任意のローカル辞書で漢字や固有名詞を指定できます。辞書はローマ字の単語または発言全体に一致するものを使います。
+
+```dotenv
+JAPANIZE_DICTIONARY='{"maikura":"マイクラ","ohayou gozaimasu":"おはようございます"}'
+```
+
+日本語が含まれる発言、`/` または `$` で始まる発言は独自変換しません。URL、メール、メンション、コード、`minecraft:stone` のようなIDは変換対象から除外します。英単語とローマ字は厳密に判別できないため、変換が不要な発言には `$` を付けてください。原文と変換文の両方でDiscordメンションは禁止し、長文は上限内に分割します。
+
+Minecraft Java版のバージョン番号やMod APIには依存せず、Vanilla/Fabricの通常ログ、Forge/NeoForgeのロガー付きログ、Paper/Spigotの非同期チャット、旧形式のINFOログを読みます。バージョン別の導入物は不要です。任意のプラグイン書式まで自動判別できるわけではなく、実機で全バージョンを起動検証したものではありません。チャット本文が `<Player> message` の形式ならスレッド名に依存せず認識します。`Player: message` はチャット用スレッドまたはLunaChatロガーと分かる行に限定して認識し、サーバーの診断表示と混同しません。スレッド情報のない独自書式では、サーバー側の公開チャット書式を `<%username> %msg` などにしてください。
+
+LunaChatの既定の1行書式 `原文 (変換文)` と、Tsuki Chatの同一ログレコード内の `原文`＋改行＋`→ 変換文` に対応します。LunaChatでは `displayNormalChatOnConsole: true` と `japanizeDisplayLine: 1` にすると、原文と変換を同じ行から取得できます。別の本文書式には、次のように2つの項目を各1回含むテンプレートを指定できます。テンプレートは正規表現ではありません。
+
+```dotenv
+JAPANIZE_SERVER_FORMAT="{original} => [{japanese}]"
+```
+
+送信者のない別ログの `[JP] ...` や `→ ...` は、私信や別プレイヤーの変換の可能性があるため推測して結び付けません。その場合、`auto` は元の公開チャットから独自変換します。ゲーム内だけに表示されてログに残らない変換結果も取得できません。サーバー側プラグイン自身の外部通信設定は、このツールの設定とは別です。上流の書式は [LunaChatの設定](https://github.com/ucchyocean/LunaChat/blob/f8bf6e036354a0f04f23059ba6de8da6e9a9fca0/src/main/resources/config.yml) と [Tsuki Chatのログに渡す文字列](https://github.com/Meatwo310/tsuki-chat/blob/460f30b02b4b7a13fc9e396cd5f1adc8e295e8ec/1.20.1/forge/src/main/java/net/meatwo310/tsukichat/util/ChatCustomizer.java#L66) を参照してください。
+
+チャンネル名から公開・非公開は判別できないため、名前付きチャンネルは既定では転送しません。公開と確認したチャンネルだけを明示します。私信の `[Player -> Target] ...` や、許可していない／識別できないチャンネル書式は除外します。
+
+```dotenv
+JAPANIZE_PUBLIC_CHANNELS=["global"]
+```
+
 ### システム通知のアイコン
 
 起動・終了、参加・退出、コンソールの発言、定期案内などのシステム・サーバー通知には、既定で自作の情報アイコン [info_icon_dot.png](assets/info_icon_dot.png) を使用します。特定プレイヤーのスキンを初期値には使用しません。画像はこのリポジトリの `main/assets/info_icon_dot.png` の固定Raw URLからDiscordが取得します。
@@ -215,6 +261,31 @@ Pass the old `.env` to `--config` to reuse it without modifying it. Relative `TA
 .\smn-main-0ff73d1.exe --config 'C:\path\to\Send-Minecraft-notifications\.env'
 ```
 <!-- smn:install-en:end -->
+
+### Japanese chat (builds after v1.0.0-beta1)
+
+Add these settings to `.env` and restart to show original chat and Japanese text together. Missing settings default to disabled:
+
+```dotenv
+JAPANIZE_ENABLED=true
+JAPANIZE_MODE=auto
+```
+
+`auto` reuses a Japanese result from the same public-chat record, otherwise converts locally. `local` always converts the original locally; `server` only uses recorded server results. Independent conversion is offline romaji-to-hiragana, without conversion APIs, model downloads, or dictionary services. It does not perform general kana-to-kanji conversion. Optional exact-word or whole-message dictionary entries can supply kanji and proper names:
+
+```dotenv
+JAPANIZE_DICTIONARY='{"maikura":"マイクラ","ohayou gozaimasu":"おはようございます"}'
+JAPANIZE_SERVER_FORMAT=""
+JAPANIZE_PUBLIC_CHANNELS=[]
+```
+
+Messages already containing Japanese or beginning with `/` or `$` skip local conversion. URLs, emails, mentions, code, and namespaced IDs remain intact. Romaji cannot always be distinguished from English; prefix a message with `$` to skip conversion. Mentions remain disabled in both lines, and long player messages are split within Discord's limit.
+
+Common Vanilla/Fabric, Forge/NeoForge, Paper/Spigot async, and old INFO log layouts are supported without depending on a Minecraft version number or installing a version-specific mod. This is log-format compatibility, not a complete Minecraft runtime test matrix. Angle-style `<Player> message` works across these layouts. Colon-style `Player: message` requires a chat thread or LunaChat logger; for custom logs without that provenance, use an unambiguous public-chat server format such as `<%username> %msg`.
+
+LunaChat's default single-line `original (Japanese)` and Tsuki Chat's same-record `original` followed by an unprefixed `→ Japanese` continuation are recognized. For LunaChat, enable normal console chat and single-line Japanize display. A custom `JAPANIZE_SERVER_FORMAT` must contain `{original}` and `{japanese}` once each, for example `{original} => [{japanese}]`; it is a literal template. Anonymous separate `[JP]` / arrow records may belong to private messages and are never guessed or forwarded. Results visible only in-game cannot be recovered from logs; `auto` falls back to local conversion. The server plugin's own network settings are independent of this tool.
+
+Named channels are excluded by default because a name does not prove a channel is public. Only list channels you have verified are public, e.g. `JAPANIZE_PUBLIC_CHANNELS=["global"]`. Private-message and unrecognized channel layouts remain excluded.
 
 ### Additional configuration
 

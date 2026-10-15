@@ -17,3 +17,5 @@ class MessageData:
     playerId: str | None = None
     event_id: EventIds = EventIds.NONE
     player_count: int | None = None
+    chat_text: str | None = None
+    chat_format: str | None = None

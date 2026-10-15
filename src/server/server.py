@@ -8,7 +8,8 @@ import asyncio
 import json
 from pathlib import Path
 
-from message.parser import LogParser
+from message.parser import LogParser, combine_chat_records
+from message.chat_japanese import JapaneseChatFormatter
 from message.webhook import DiscordWebhook
 from message.model import MessageType
 from message.constant import EventIds
@@ -37,6 +38,7 @@ class Server:
         self.webhook: DiscordWebhook | None = None
         self.parser: LogParser
         self.i18n: I18n
+        self.chat_japanese = JapaneseChatFormatter()
         pass
     
     def init(self, config_path: Path | None = None):
@@ -44,6 +46,11 @@ class Server:
         
         config_path = config_path or default_config_path()
         BotEnv.init(config_path)
+        self.chat_japanese = JapaneseChatFormatter(
+            enabled=BotEnv.JapanizeEnabled.getBool(), mode=BotEnv.JapanizeMode.get(),
+            dictionary=json.loads(BotEnv.JapanizeDictionary.get()),
+            server_format=BotEnv.JapanizeServerFormat.get(),
+        )
         self.tips_messages = [
             normalize_message_newlines(tip) for tip in json.loads(BotEnv.TipsMessages.get())
         ]
@@ -69,7 +76,8 @@ class Server:
             BotEnv.ServerStopMessage.get(),
             BotEnv.ServerRestartMessage.get(),
             BotEnv.RestartAnnouncementMessage.get(),
-            BotEnv.OtherIgnoreNames.get()
+            BotEnv.OtherIgnoreNames.get(),
+            public_channels=json.loads(BotEnv.JapanizePublicChannels.get()),
         )
         self.logger.info("LogParser initialized.")
         
@@ -98,7 +106,7 @@ class Server:
                     filepath = change[1]
                     filename = path.basename(filepath)
                     if filename == BotEnv.TargetFile.get():
-                        for line in self.logutil.get_log_diff(filepath):
+                        for line in combine_chat_records(self.logutil.get_log_diff(filepath)):
                             await self.on_line_added(line)
         except asyncio.exceptions.CancelledError:
             pass
@@ -120,6 +128,10 @@ class Server:
             self.logger.warn("Unknown message happened!", result=result)
             return
         
+        if result.chat_text is not None:
+            result.text = self.chat_japanese.format_message(result.chat_text, result.chat_format or "")
+            if not result.text:
+                return
         result.text = self.replace_additional_data(result.text)
         
         self.logger.debug("Sending", message=result.text)

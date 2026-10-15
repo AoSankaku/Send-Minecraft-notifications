@@ -13,7 +13,7 @@ def main() -> None:
     # Use the Windows system directory (or an empty PATH on Linux), never Python.
     environment["PATH"] = str(Path(os.environ["SystemRoot"]) / "System32") if os.name == "nt" else ""
     for key in list(environment):
-        if key.startswith(("PYTHON", "WEBHOOK", "SERVER_", "SENDER_", "TARGET_", "TIPS_")) or key in (
+        if key.startswith(("PYTHON", "WEBHOOK", "SERVER_", "SENDER_", "TARGET_", "TIPS_", "JAPANIZE_")) or key in (
             "EMBED_MODE", "KILL_AFTER_CLOSED", "PLAYER_ICON_API", "IGNORE_NAMES", "PLUGIN_DIR",
             "RESTART_ANNOUNCEMENT_MESSAGE",
         ):
@@ -49,6 +49,9 @@ def main() -> None:
 
         url = "https://discord.com/api/webhooks/123456789012345678/" + "test-token" * 6
         config.write_text(f"WEBHOOK_URL={url}\nTARGET_DIR=./logs\n", encoding="utf-8")
+        assert "No notifications were sent" in run("--check-config")
+        with config.open("a", encoding="utf-8") as output:
+            output.write('JAPANIZE_ENABLED=true\nJAPANIZE_MODE=local\nJAPANIZE_DICTIONARY=\'{"maikura":"マイクラ"}\'\n')
         assert "No notifications were sent" in run("--check-config")
         external = root / "custom-config" / ".env"
         run("--config", str(external), "--init-config")

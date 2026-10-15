@@ -10,6 +10,7 @@ from typing import Self
 
 from utils.miscutil import normalize_message_newlines
 from utils.runtime import default_config_path, resource_path
+from message.chat_japanese import validate_server_format
 
 
 def _is_bool_str(s: str) -> bool:
@@ -58,11 +59,40 @@ def _validate_env(name: Self, value: str) -> str | None:
                 or not re.fullmatch(r"/api/webhooks/[0-9]{17,20}/[A-Za-z0-9._-]{60,}", url.path)
             ):
                 return None
-        case BotEnv.KillAfterClosed:
+        case BotEnv.KillAfterClosed | BotEnv.JapanizeEnabled:
             if not _is_bool_str(value):
                 return None
         case BotEnv.EmbedMode:
             if not _is_bool_str(value):
+                return None
+        case BotEnv.JapanizeMode:
+            return value.casefold() if value.casefold() in {"auto", "local", "server"} else None
+        case BotEnv.JapanizeDictionary:
+            try:
+                dictionary = json.loads(value)
+            except (TypeError, ValueError):
+                return None
+            if not isinstance(dictionary, dict) or len(dictionary) > 256 or not all(
+                isinstance(key, str) and re.fullmatch(r"[A-Za-z][A-Za-z' -]{0,127}", key)
+                and isinstance(replacement, str) and 0 < len(replacement) <= 1024
+                for key, replacement in dictionary.items()
+            ):
+                return None
+        case BotEnv.JapanizePublicChannels:
+            try:
+                channels = json.loads(value)
+            except (TypeError, ValueError):
+                return None
+            if not isinstance(channels, list) or len(channels) > 64 or not all(
+                isinstance(channel, str) and re.fullmatch(r"[^\[\]\r\n]{1,64}", channel)
+                and not any(marker in channel for marker in ("->", "→", "»"))
+                for channel in channels
+            ):
+                return None
+        case BotEnv.JapanizeServerFormat:
+            try:
+                return validate_server_format(normalize_message_newlines(value))
+            except ValueError:
                 return None
         case BotEnv.TipsMessages:
             try:
@@ -112,6 +142,13 @@ class BotEnv(StrEnum):
     
     # Api Endpoint
     PlayerIconApi = "PLAYER_ICON_API"
+
+    # Optional offline public-chat conversion.
+    JapanizeEnabled = "JAPANIZE_ENABLED"
+    JapanizeMode = "JAPANIZE_MODE"
+    JapanizeDictionary = "JAPANIZE_DICTIONARY"
+    JapanizeServerFormat = "JAPANIZE_SERVER_FORMAT"
+    JapanizePublicChannels = "JAPANIZE_PUBLIC_CHANNELS"
 
     @staticmethod
     def init(env_path: str | Path | None = None):

@@ -86,3 +86,27 @@ def test_retry_cannot_reenable_mentions(monkeypatch):
             await webhook.onClose()
 
     asyncio.run(send())
+
+
+def test_long_original_and_japanese_chat_is_split_without_losing_text_or_mentions_policy(monkeypatch):
+    execute = AsyncMock(return_value=None)
+    monkeypatch.setattr(AsyncWebhookAdapter, "execute_webhook", execute)
+    content = "``` @everyone " + "あ" * 1800 + "\n↳ " + "😀" * 1100
+
+    async def send():
+        webhook = DiscordWebhook(
+            "https://discord.com/api/webhooks/123456789012345678/" + "test-token" * 6,
+            "https://example.com/avatars/", "Server", "",
+        )
+        try:
+            await webhook.sendPlayerMessage(content, "Alice")
+        finally:
+            await webhook.onClose()
+
+    asyncio.run(send())
+    payloads = [call.kwargs["payload"] for call in execute.call_args_list]
+    assert len(payloads) >= 2
+    assert "".join(payload["content"] for payload in payloads) == content
+    assert all(len(payload["content"].encode("utf-16-le")) // 2 <= 2000 for payload in payloads)
+    assert all(payload["username"] == "Alice" for payload in payloads)
+    assert all(payload["allowed_mentions"] == {"parse": []} for payload in payloads)
