@@ -27,4 +27,12 @@ Selected-module coverage is 87%; `message.openmapmc` is **100%**, parser 95%, I1
 
 Asyncio checks ran outside the restricted Windows sandbox because it blocks Python's event-loop socket pair. Discord calls were mocked. No Minecraft startup or live webhook was needed.
 
-Producer-generated mutation-log verification will be recorded after the owning chat captures the new source events. An older installed server JAR requires an update before it can emit editing/deletion logs.
+## Actual producer-log verification
+
+The source event harness passed **163 checks per version** for 1.20.1, 1.21.1, 26.1.2 and 26.2. Its captured records are in the source repository's `.task-work/shared-mutations-20261015/green-{version}.log`. The records were consumed by this notifier's real `LogParser` and `I18n` for every supported language: **8 source samples × 22 languages = 176 accepted localized notifications**.
+
+Every sample retained owner `Alice` while identifying the authenticated operation actor `Admin`. The update sample carried the new `admin edit` waypoint in `minecraft:the_end` at `101, 70, -202`; deletion carried the last saved `second point` waypoint in `minecraft:overworld` at `7, 68, 9`. All languages preserved these fields and routed the notification under `Admin`, with the matching update/deletion event ID and literal-text handling.
+
+The source chat built and inspected distributable JARs for 1.20.1 Forge, 1.21.1 NeoForge, 26.1.2 NeoForge and 26.2 NeoForge. Its `artifacts.json` records matching event bytecode and metadata. `deployment.json` records SHA-256-matched deployment to the three designated Prism instances (1.20.1 Forge 47.4.0, 1.21.1 NeoForge 21.1.248, 26.2 NeoForge 26.2.0.88), with previous development JARs backed up and other MODs unchanged. There is no designated 26.1.2 deployment instance. Source packaging/deployment remains owned by that chat; this does not update an independent dedicated server. An older installed server JAR requires an update before it can emit editing/deletion logs.
+
+The owning chat completed with signed source commits `3e52539` (tests) and `5b46096` (implementation), additionally reporting 730 existing configuration checks passed. No Minecraft runtime was started and no commits were pushed.
