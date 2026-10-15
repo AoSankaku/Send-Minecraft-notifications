@@ -84,7 +84,7 @@ def test_chat_and_say_cannot_impersonate_waypoint_events():
 
 
 def test_names_are_inserted_literally_without_recursive_placeholder_expansion():
-    name = '「拠点」 %waypoint-x% %server-count% @everyone `x`'
+    name = '「拠点」 §a %waypoint-x% %server-count% @everyone `x`'
     result = LogParser("", "", "", "", []).parse(line(DATA | {"name": name}), Templates())
     assert result is not None
     assert result.text.startswith(name + " | ")

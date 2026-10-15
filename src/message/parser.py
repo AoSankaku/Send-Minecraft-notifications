@@ -4,6 +4,7 @@ from typing import Callable
 from message.model import MessageData, MessageType
 from message.constant import EventIds
 from message.i18n import I18n
+from message.openmapmc import EVENT_PREFIX, DEFAULT_TEMPLATE, parse_waypoint_created
 
 forge_primary_prefix = r"^\[.*] \[Server thread/INFO] \[net\.minecraft\.server\.dedicated\.DedicatedServer/]: "
 forge_secondary_prefix = r"^\[.*] \[Server thread/INFO] \[net\.minecraft\.server\.MinecraftServer/]: "
@@ -137,11 +138,13 @@ class LogParser(RegexParser):
         public_channels=(),
         advancement_translator=None,
         death_translator=None,
+        openmapmc_waypoints=True,
     ):
         super().__init__()
         self.public_channels = {channel.casefold() for channel in public_channels}
         self.advancement_translator = advancement_translator
         self.death_translator = death_translator
+        self.openmapmc_waypoints = openmapmc_waypoints
         ignore_names = {name.casefold() for name in ignore_names}
 
         # player issue command
@@ -299,6 +302,20 @@ class LogParser(RegexParser):
         if decoded is None:
             return super().parse(text, translator)
         header, body, not_secure = decoded
+        if body.startswith(EVENT_PREFIX):
+            # Preserve section-sign text inside JSON values, while removing
+            # console ANSI styling. Chat/unsigned wrappers are never events.
+            raw = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", text).rstrip("\r\n")
+            event_header = _LOG_HEADER.fullmatch(raw)
+            if not self.openmapmc_waypoints or event_header is None or not event_header["body"].startswith(EVENT_PREFIX):
+                return None
+            thread, logger = event_header["thread"], event_header["logger"]
+            if thread is not None and thread.casefold() != "server thread":
+                return None
+            if logger is not None and logger.rstrip("/").casefold() != "openmapdelta":
+                return None
+            template = translator.translate(EventIds.ON_SHARED_WAYPOINT_CREATED) if translator else DEFAULT_TEMPLATE
+            return parse_waypoint_created(event_header["body"], DEFAULT_TEMPLATE if template is None else template)
         # An anonymous conversion can belong to a private message. Never infer
         # its sender from the previous public message or forward it on its own.
         if _PRIVATE_CHAT.match(body) or body.startswith(("[JP]", "→ ")):

@@ -26,6 +26,7 @@ class EventIds(StrEnum):
     
     # integrations
     ON_CHAT_FROM_LUNACHAT = "on_chat_from_lunachat"
+    ON_SHARED_WAYPOINT_CREATED = "on_shared_waypoint_created"
     
     # Other
     PLAYER_COUNT_NOTIFY = "player_count_notify"

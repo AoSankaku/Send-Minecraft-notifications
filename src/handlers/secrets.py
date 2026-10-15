@@ -59,7 +59,7 @@ def _validate_env(name: Self, value: str) -> str | None:
                 or not re.fullmatch(r"/api/webhooks/[0-9]{17,20}/[A-Za-z0-9._-]{60,}", url.path)
             ):
                 return None
-        case BotEnv.KillAfterClosed | BotEnv.JapanizeEnabled | BotEnv.AdvancementTranslationEnabled:
+        case BotEnv.KillAfterClosed | BotEnv.JapanizeEnabled | BotEnv.AdvancementTranslationEnabled | BotEnv.OpenMapMcWaypoints:
             if not _is_bool_str(value):
                 return None
         case BotEnv.EmbedMode:
@@ -168,6 +168,7 @@ class BotEnv(StrEnum):
     MinecraftVersion = "MINECRAFT_VERSION"
     ModsDir = "MODS_DIR"
     TranslationCacheDir = "TRANSLATION_CACHE_DIR"
+    OpenMapMcWaypoints = "OPENMAPMC_WAYPOINT_NOTIFICATIONS"
 
     @staticmethod
     def init(env_path: str | Path | None = None):

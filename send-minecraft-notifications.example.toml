@@ -99,3 +99,7 @@ MODS_DIR = ""
 # Automatically created cache of extracted MOD language/advancement resources.
 # MODの言語・進捗データを保存するキャッシュ。自動作成されます。
 TRANSLATION_CACHE_DIR = "./translation-cache"
+
+# Notify shared waypoint creation from OpenMapMC's structured server event log.
+# OpenMapMCの構造化サーバーログから、共有ウェイポイントの作成を通知します。
+OPENMAPMC_WAYPOINT_NOTIFICATIONS = true

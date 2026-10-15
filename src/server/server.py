@@ -85,6 +85,7 @@ class Server:
             public_channels=json.loads(BotEnv.JapanizePublicChannels.get()),
             advancement_translator=self.advancement_translator,
             death_translator=self.death_translator,
+            openmapmc_waypoints=BotEnv.OpenMapMcWaypoints.getBool(),
         )
         self.logger.info("LogParser initialized.")
         

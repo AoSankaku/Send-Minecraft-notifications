@@ -18,5 +18,6 @@
     "on_goal_complete": ":checkered_flag: ha raggiunto l'obiettivo [%goal-name%]!",
     "on_challenge_complete": ":trophy: ha completato la sfida [%challenge-name%]!",
     "on_achievements_complete_old": ":military_medal: ha ottenuto il traguardo [%challenge-name%]!",
-    "player_count_notify": ":information_source: Ci sono %server-count% giocatori online. Ti aspettano tutti :eyes:"
+    "player_count_notify": ":information_source: Ci sono %server-count% giocatori online. Ti aspettano tutti :eyes:",
+    "on_shared_waypoint_created": ":round_pushpin: Creato il waypoint condiviso %waypoint-name% nella dimensione %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
 }
