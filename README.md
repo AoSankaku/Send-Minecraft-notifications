@@ -9,18 +9,17 @@ Minecraft サーバーのログを監視し、起動・終了、プレイヤー�
 3. `.env` の `WEBHOOK_URL` に Discord Webhook URL を、`TARGET_DIR` に Minecraft サーバーのログフォルダーを設定します。
 4. 実行ファイルを再起動します。
 
-### Ubuntu Server / Linux でのダウンロードと起動
+<!-- smn:install-ja:start -->
+対象リリース: [v1.0.0-beta0](https://github.com/AoSankaku/Send-Minecraft-notifications/releases/tag/v1.0.0-beta0)。Python のインストールや ZIP の展開は不要です。設定を書き込めるフォルダーで実行してください。
 
-設定を書き込めるフォルダーへ移動し、Linux x64 版をダウンロードしてください。Python のインストールや ZIP の展開は不要です。以下は `v1.0.0-beta0` の例です。ほかのバージョンを使う場合は、[Releases](https://github.com/AoSankaku/Send-Minecraft-notifications/releases) でタグを確認し、URL 中の `v1.0.0-beta0` を置き換えてください。
+### Ubuntu Server / Linux x64 でのダウンロードと起動
 
 ```sh
 curl -fL -o send-minecraft-notifications-linux-x64 \
   https://github.com/AoSankaku/Send-Minecraft-notifications/releases/download/v1.0.0-beta0/send-minecraft-notifications-linux-x64
 ```
 
-`-L` は GitHub の転送先を追い、`-o` は指定したファイル名で保存します。`-f` は HTTP エラー時に失敗させる指定です。
-
-任意で、実行前に同じリリースのチェックサムをダウンロードして整合性を確認できます。ZIP をダウンロードしていなくても検査できます。
+任意で、実行前に同じリリースのチェックサムで検証します。未取得の ZIP は検査対象から外れます。
 
 ```sh
 curl -fL -o SHA256SUMS-linux-x64.txt \
@@ -28,30 +27,41 @@ curl -fL -o SHA256SUMS-linux-x64.txt \
 sha256sum --check --ignore-missing SHA256SUMS-linux-x64.txt
 ```
 
-ダウンロードに成功したら、実行権限を付けて初回起動します。同じフォルダーに `.env` の雛形を作成して終了します。
+実行権限を付けて初回起動します。同じフォルダーに `.env` の雛形を作成して終了します。
 
 ```sh
 chmod +x ./send-minecraft-notifications-linux-x64
 ./send-minecraft-notifications-linux-x64
 ```
 
-`.env` の `WEBHOOK_URL` と `TARGET_DIR` を編集した後、設定を検査して起動します。`TARGET_DIR` には実際のサーバーのログフォルダーを指定してください。
+エディターで `.env` の `WEBHOOK_URL` と `TARGET_DIR`（Minecraft サーバーのログフォルダー）を設定してから、設定を検査して起動します。
 
 ```sh
 ./send-minecraft-notifications-linux-x64 --check-config
 ./send-minecraft-notifications-linux-x64
 ```
 
-### 設定ファイルの場所を指定する（Windows / Linux 共通）
-
-必要に応じて設定ファイルの場所を `--config <path>` で指定できます。`--init-config` は設定雛形を作成し、`--check-config` は設定を検査します。たとえば、Windows では次のように実行します。
-
-Windows の実行ファイル名は、アプリ名・Git ブランチ・ビルド元コミットから生成されます。以下の `smn-main-abcdef0.exe` はファイル名の例です。ダウンロードした実際のファイル名に置き換えてください。
+### Windows x64 / PowerShell でのダウンロードと起動
 
 ```powershell
-.\smn-main-abcdef0.exe --init-config
-.\smn-main-abcdef0.exe --config .\.env --check-config
+curl.exe -fL -o smn-main-cf422f8.exe `
+  https://github.com/AoSankaku/Send-Minecraft-notifications/releases/download/v1.0.0-beta0/smn-main-cf422f8.exe
+.\smn-main-cf422f8.exe
 ```
+
+初回起動で作られた `.env` をエディターで開き、`WEBHOOK_URL` と `TARGET_DIR` を設定してから、次を実行します。
+
+```powershell
+.\smn-main-cf422f8.exe --check-config
+.\smn-main-cf422f8.exe
+```
+
+`-L` は GitHub の転送先を追い、`-o` はファイルに保存し、`-f` は HTTP エラー時に失敗させます。既存の `.env` は上書きされません。設定検査では Discord へ送信しません。
+<!-- smn:install-ja:end -->
+
+### 設定ファイルの場所を指定する（Windows / Linux 共通）
+
+必要に応じて設定ファイルの場所を `--config <path>` で指定できます。`--init-config` は設定雛形を作成し、`--check-config` は設定を検査します。Windows の実行ファイル名は、アプリ名・Git ブランチ・ビルド元コミットから生成されます。上のコマンドには対象リリースの実際のファイル名を使用しています。
 
 `TARGET_DIR` を相対パスで書いた場合は、`.env` ファイルがあるフォルダーからの相対パスとして解決されます。サーバー起動直後に `logs/latest.log` がまだ作られていなくても、ファイルが現れるまで待機します。
 
@@ -106,9 +116,13 @@ uv run python scripts/build_release.py
 
 ## GitHub Actions による自動リリース
 
-リリースタグを GitHub に push すると、Windows x64 と Linux x64 のビルドが自動で実行されます。`1.2.3`・`v1.2.3` のどちらの形式も使えます。このリポジトリではすべてのタグをリリースとして扱います。タグの対象コミットに `.github/workflows/release.yml` が含まれている必要があります。
+リリースタグを GitHub に push すると、Windows x64 と Linux x64 のビルドが自動で実行されます。`1.2.3`・`v1.2.3` のどちらの形式も使えます。このリポジトリではすべてのタグをリリースとして扱います。タグ名は英数字で始め、英数字と `.`, `_`, `/`, `+`, `-` を使用してください。タグの対象コミットに `.github/workflows/release.yml` が含まれている必要があります。
 
-両 OS のテスト・単体実行チェックが成功した後、成果物のチェックサムを検証し、実行ファイル・ZIP・チェックサムの計6ファイルを同じ GitHub Release へ添付して自動公開します。リリースノートも自動生成されます。アップロード完了までは Draft 状態を維持し、途中で失敗した場合は公開しません。再実行では途中の Draft を完成させ、公開済みのリリースの添付ファイルは変更しません。
+両 OS のテスト・単体実行チェックが成功した後、成果物のチェックサムを検証し、実行ファイル・ZIP・チェックサムの計6ファイルを同じ GitHub Release へ添付して自動公開します。リリースノートには変更履歴に加え、そのタグと実際の Windows ファイル名に合った Linux / PowerShell のダウンロード・設定・起動手順を日英で自動挿入します。配布 ZIP 内の README にも同じタグの手順を収録します。
+
+公開後、既定ブランチの README の手順部分だけを GitHub Actions が更新します。最も新しく公開されたリリースを対象とし、古いリリースの再実行で URL を巻き戻しません。既定ブランチが直接更新を禁止している場合、この更新ステップは失敗するため、ブランチルールに応じた運用が必要です。手順の生成元は `scripts/release_docs.py` です。`smn:install-ja` / `smn:install-en` のコメントで囲んだ部分は自動生成されるので、文言を変更する場合は生成元を編集してください。
+
+アップロード完了までは Draft 状態を維持し、途中で失敗した場合は公開しません。再実行では途中の Draft を完成させ、公開済みのリリースの添付ファイルは変更しません。README 更新が失敗しても、公開済みの実行ファイルは利用できます。
 
 `1.2.3-rc.1`・`v1.2.3-beta.1` のようなタグは Prerelease として公開します。ベータタグでは Docker の `latest` タグを更新しません。追加のトークン設定は不要で、公開ジョブに限定した `GITHUB_TOKEN` の `contents: write` 権限を使用します。Actions からの手動実行はビルドと Actions artifact の作成のみで、リリースは公開しません。
 
@@ -116,16 +130,17 @@ uv run python scripts/build_release.py
 
 Download the Windows x64 `.exe` or Linux x64 binary from [Releases](https://github.com/AoSankaku/Send-Minecraft-notifications/releases). The standalone binary does not require Python, and you can run it without extracting a ZIP. On first run it creates a `.env` template beside itself. Set `WEBHOOK_URL` and `TARGET_DIR`, then run it again. Relative `TARGET_DIR` values are resolved from the folder containing `.env`. On Linux, run `chmod +x <binary>` first. The Linux build requires glibc 2.35 or newer. Other operating systems and architectures are not currently supported release targets.
 
-### Ubuntu Server / Linux quick start
+<!-- smn:install-en:start -->
+Release: [v1.0.0-beta0](https://github.com/AoSankaku/Send-Minecraft-notifications/releases/tag/v1.0.0-beta0). No Python installation or ZIP extraction is required. Run these commands in a writable directory.
 
-The Linux x64 binary has passed first-run setup and configuration smoke checks on Ubuntu 22.04 and 24.04 with Python removed from PATH. In a writable directory, download the binary using the commands below. This example uses `v1.0.0-beta0`; replace that tag in the URLs to download another release. Python and ZIP extraction are not required.
+### Ubuntu Server / Linux x64 download and startup
 
 ```sh
 curl -fL -o send-minecraft-notifications-linux-x64 \
   https://github.com/AoSankaku/Send-Minecraft-notifications/releases/download/v1.0.0-beta0/send-minecraft-notifications-linux-x64
 ```
 
-`-L` follows GitHub's redirects, `-o` saves the binary to a file, and `-f` fails on HTTP errors. Optionally verify its checksum before running it; the missing ZIP is ignored:
+Optionally verify the checksum before execution. The ZIP is ignored if it was not downloaded.
 
 ```sh
 curl -fL -o SHA256SUMS-linux-x64.txt \
@@ -133,19 +148,37 @@ curl -fL -o SHA256SUMS-linux-x64.txt \
 sha256sum --check --ignore-missing SHA256SUMS-linux-x64.txt
 ```
 
-After a successful download, make the file executable and run it once to create `.env` beside the binary:
+Make the binary executable, then run it once to create a `.env` template beside it and exit.
 
 ```sh
 chmod +x ./send-minecraft-notifications-linux-x64
 ./send-minecraft-notifications-linux-x64
 ```
 
-Edit `WEBHOOK_URL` and `TARGET_DIR` in `.env`. Set `TARGET_DIR` to your Minecraft server's log directory. Validate the settings, then start the notifier again:
+Use an editor to set `WEBHOOK_URL` and `TARGET_DIR` (your Minecraft server's log directory) in `.env`. Validate the settings, then start the notifier:
 
 ```sh
 ./send-minecraft-notifications-linux-x64 --check-config
 ./send-minecraft-notifications-linux-x64
 ```
+
+### Windows x64 / PowerShell download and startup
+
+```powershell
+curl.exe -fL -o smn-main-cf422f8.exe `
+  https://github.com/AoSankaku/Send-Minecraft-notifications/releases/download/v1.0.0-beta0/smn-main-cf422f8.exe
+.\smn-main-cf422f8.exe
+```
+
+Open the generated `.env` in an editor and set `WEBHOOK_URL` and `TARGET_DIR`, then run:
+
+```powershell
+.\smn-main-cf422f8.exe --check-config
+.\smn-main-cf422f8.exe
+```
+
+`-L` follows GitHub redirects, `-o` saves to a file, and `-f` fails on HTTP errors. Existing `.env` files are preserved. Configuration checks do not send Discord notifications.
+<!-- smn:install-en:end -->
 
 ### Additional configuration
 
@@ -153,7 +186,9 @@ System/server notifications use the original [info icon](assets/info_icon_dot.pn
 
 For development, install Python 3.12 and uv, copy `.env.example` to `.env`, and set `WEBHOOK_URL` and `TARGET_DIR`. Then run `uv sync --frozen`, `uv run pytest`, and `uv run python src/main.py`. To make a local release build, run `uv sync --frozen --group build` followed by `uv run python scripts/build_release.py` on the target operating system.
 
-Pushing any release tag (for example `1.2.3` or `v1.2.3`) runs both platform builds and publishes one GitHub Release containing both binaries, ZIPs, and checksums after tests and asset verification succeed. The tagged commit must include the release workflow. Version tags with a suffix such as `-rc.1` publish a prerelease and do not update Docker's `latest` tag. Failed uploads remain drafts; reruns complete drafts while preserving published releases. Manual workflow runs create Actions artifacts only. No additional token is required.
+Pushing a release tag (for example `1.2.3` or `v1.2.3`) runs both platform builds and publishes one GitHub Release containing both binaries, ZIPs, and checksums after tests and asset verification succeed. Tag names must start with an ASCII letter or digit and contain only ASCII letters, digits, `.`, `_`, `/`, `+`, or `-`. The tagged commit must include the release workflow. Each ZIP's README and the release notes include generated Linux and PowerShell installation commands using that release's tag and actual Windows filename. After publication, Actions updates only the managed installation sections of the default branch's README. Older release reruns cannot roll the URLs back. Branch rules must allow this README update; if it fails, the published binaries remain available. Edit `scripts/release_docs.py` to change instructions inside the `smn:install-ja` / `smn:install-en` markers.
+
+Version tags with a suffix such as `-rc.1` publish a prerelease and do not update Docker's `latest` tag. Failed uploads remain drafts; reruns complete drafts while preserving published releases. Manual workflow runs create Actions artifacts only. No additional token is required.
 
 ## License
 

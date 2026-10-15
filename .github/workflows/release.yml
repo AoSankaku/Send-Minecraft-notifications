@@ -54,7 +54,19 @@ jobs:
         if: matrix.platform == 'windows'
         run: uv run python scripts/test_build_release.py
 
+      - name: Test release documentation
+        run: uv run python scripts/test_release_docs.py
+
+      - name: Generate README for this release tag
+        if: github.ref_type == 'tag'
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: uv run python scripts/release_docs.py readme --tag "$TAG_NAME"
+
       - name: Build release assets
+        # The archive includes the README generated from the current tag.
         run: uv run python scripts/build_release.py
 
       - name: Smoke test the standalone binary
@@ -81,6 +93,10 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     needs: build
     runs-on: ubuntu-latest
+    concurrency:
+      group: standalone-publish-${{ github.repository }}
+      queue: max
+      cancel-in-progress: false
     permissions:
       contents: write
     steps:
@@ -106,3 +122,10 @@ jobs:
           TAG_NAME: ${{ github.ref_name }}
         shell: bash
         run: bash scripts/publish_release.sh release-assets
+
+      - name: Update repository README for the newest published release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: python3 scripts/release_docs.py sync-readme --tag "$TAG_NAME"

@@ -36,20 +36,29 @@ class PublishReleaseTests(unittest.TestCase):
             )
             (self.assets / f"SHA256SUMS-{platform}.txt").write_text(sums)
         self.commands = self.root / "commands.jsonl"
+        self.notes = self.root / "notes.jsonl"
         fake_bin = self.root / "bin"
         fake_bin.mkdir()
         gh = fake_bin / "gh"
         gh.write_text(
             f"#!{sys.executable}\n"
             "import json, os, sys\n"
+            "from pathlib import Path\n"
             "with open(os.environ['FAKE_GH_LOG'], 'a') as log:\n"
             "    log.write(json.dumps(sys.argv[1:]) + '\\n')\n"
             "command = sys.argv[2]\n"
+            "if '--notes-file' in sys.argv:\n"
+            "    body = Path(sys.argv[sys.argv.index('--notes-file') + 1]).read_text(encoding='utf-8')\n"
+            "    with open(os.environ['FAKE_GH_NOTES'], 'a', encoding='utf-8') as log:\n"
+            "        log.write(json.dumps({'command': command, 'body': body}) + '\\n')\n"
             "if os.environ.get('FAKE_GH_FAIL') == command:\n"
             "    sys.exit(9)\n"
             "if command == 'view':\n"
             "    state = os.environ.get('FAKE_GH_STATE', 'absent')\n"
             "    if state == 'absent': sys.exit(1)\n"
+            "    if 'body' in sys.argv:\n"
+            "        print(os.environ.get('FAKE_GH_BODY', 'Original changelog'))\n"
+            "        sys.exit(0)\n"
             "    print(state)\n"
         )
         gh.chmod(0o755)
@@ -57,7 +66,8 @@ class PublishReleaseTests(unittest.TestCase):
         self.environment.update(
             PATH=str(fake_bin) + os.pathsep + os.environ["PATH"],
             TAG_NAME="1.2.3", GH_REPO="example/project", GH_TOKEN="fake-token",
-            FAKE_GH_LOG=str(self.commands), FAKE_GH_STATE="absent", FAKE_GH_FAIL="",
+            FAKE_GH_LOG=str(self.commands), FAKE_GH_NOTES=str(self.notes),
+            FAKE_GH_STATE="absent", FAKE_GH_FAIL="",
         )
 
     def run_script(self, **environment):
@@ -75,15 +85,24 @@ class PublishReleaseTests(unittest.TestCase):
         create = commands[1]
         for flag in ("--verify-tag", "--draft", "--generate-notes"):
             self.assertIn(flag, create)
+        self.assertIn("--notes-file", create)
         self.assertEqual(set(create[3:9]), {str(path) for path in self.assets.iterdir()})
         self.assertIn("--draft=false", commands[2])
         self.assertIn("--prerelease=false", commands[2])
+        notes = json.loads(self.notes.read_text().splitlines()[0])["body"]
+        self.assertIn("https://github.com/example/project/releases/download/1.2.3/", notes)
+        self.assertIn("curl -fL -o send-minecraft-notifications-linux-x64", notes)
+        self.assertIn("curl.exe -fL -o smn-main-123abcd.exe", notes)
 
     def test_draft_retry_uploads_before_publishing(self):
         result, commands = self.run_script(FAKE_GH_STATE="true")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual([command[1] for command in commands], ["view", "upload", "edit"])
-        self.assertIn("--clobber", commands[1])
+        self.assertEqual([command[1] for command in commands], ["view", "view", "upload", "edit", "edit"])
+        self.assertIn("--clobber", commands[2])
+        self.assertIn("--draft=false", commands[-1])
+        notes = json.loads(self.notes.read_text().splitlines()[0])["body"]
+        self.assertIn("Original changelog", notes)
+        self.assertEqual(notes.count("<!-- smn:release-install:start -->"), 1)
 
     def test_published_release_is_preserved(self):
         result, commands = self.run_script(FAKE_GH_STATE="false")
@@ -93,7 +112,12 @@ class PublishReleaseTests(unittest.TestCase):
     def test_upload_failure_never_publishes(self):
         result, commands = self.run_script(FAKE_GH_STATE="true", FAKE_GH_FAIL="upload")
         self.assertNotEqual(result.returncode, 0)
-        self.assertEqual([command[1] for command in commands], ["view", "upload"])
+        self.assertEqual([command[1] for command in commands], ["view", "view", "upload"])
+
+    def test_draft_notes_failure_never_publishes(self):
+        result, commands = self.run_script(FAKE_GH_STATE="true", FAKE_GH_FAIL="edit")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn("--draft=false", commands[-1])
 
     def test_create_failure_never_publishes(self):
         result, commands = self.run_script(FAKE_GH_FAIL="create")
@@ -120,6 +144,7 @@ class PublishReleaseTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(commands[-1][2], tag)
                 self.assertIn("--prerelease=true", commands[-1])
+                self.assertIn("--latest=false", commands[-1])
 
     def test_multiple_executables_never_call_github(self):
         (self.assets / "smn-feature-7654321.exe").write_bytes(b"second application executable")
