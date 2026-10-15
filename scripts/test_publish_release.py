@@ -189,7 +189,7 @@ class PublishReleaseTests(unittest.TestCase):
                 )
 
     def test_release_asset_can_exceed_local_debug_filename_limit(self):
-        long_tag = "v1.2345678901234567890-beta.123"
+        long_tag = "v1.2345678901234567890.0-beta.123"
         self.install_windows_asset(long_tag)
         result, commands = self.run_script(TAG_NAME=long_tag)
         self.assertEqual(result.returncode, 0, result.stderr)
