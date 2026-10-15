@@ -1,0 +1,22 @@
+{
+    "on_issue_command": ":keyboard: Spustil příkaz: `%player-message%`",
+    "on_join": ":green_circle: %player-name% se připojil do hry. (online: %server-count%)",
+    "on_left": ":red_circle: %player-name% opustil hru. (online: %server-count%)",
+    "on_kick": ":boot: Hráč %player-name% byl vykopnut. Důvod: `%player-message%`",
+    "on_join_non_whitelisted": ":yellow_circle: %player-name% se pokusil připojit, ale není na whitelistu.",
+    "on_server_start": ":door: **Server je online!**",
+    "on_server_stop": ":no_entry_sign: **Server je offline.**",
+    "on_server_restart": ":recycle: Server se restartuje. Může to chvíli trvat.",
+    "on_console_chat": "`%player-message%`",
+    "on_secure_chat": "`%player-message%`",
+    "on_secure_chat_other": "`%player-message%`",
+    "on_non_secure_chat": "`%player-message%`",
+    "on_chat_from_lunachat": "`%player-message%`",
+    "on_death": ":skull_crossbones: zemřel. Běž mu pomoct! (x:%death-x%/y:%death-y%/z:%death-z%)",
+    "on_recalc_player_count": ":information_source: Online je %server-count% hráčů (maximum %server-max-player%).",
+    "on_advancement_complete": ":trophy: získal pokrok [%advancement-name%]!",
+    "on_goal_complete": ":checkered_flag: dosáhl cíle [%goal-name%]!",
+    "on_challenge_complete": ":trophy: dokončil výzvu [%challenge-name%]!",
+    "on_achievements_complete_old": ":military_medal: získal úspěch [%challenge-name%]!",
+    "player_count_notify": ":information_source: Online je %server-count% hráčů. Všichni čekají :eyes:"
+}

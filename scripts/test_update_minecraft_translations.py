@@ -22,6 +22,8 @@ def test_only_progress_titles_and_old_achievement_names_are_retained():
         "achievement.openInventory.desc": "Press E",
         "achievement.get": "Achievement get!",
         "achievement.taken": "Achievement taken!",
+        "achievement.requires": "Requires '%1$s'",
+        "achievement.unknown": "???",
         "chat.type.advancement.task": "%s made %s",
     }) == {
         "advancements.story.mine_stone.title": "Stone Age",

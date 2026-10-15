@@ -1,0 +1,22 @@
+{
+    "on_issue_command": ":keyboard: Đã chạy lệnh: `%player-message%`",
+    "on_join": ":green_circle: %player-name% đã tham gia trò chơi. (đang trực tuyến: %server-count%)",
+    "on_left": ":red_circle: %player-name% đã rời trò chơi. (đang trực tuyến: %server-count%)",
+    "on_kick": ":boot: %player-name% đã bị đuổi. Lý do: `%player-message%`",
+    "on_join_non_whitelisted": ":yellow_circle: %player-name% đã cố tham gia nhưng không có trong danh sách cho phép.",
+    "on_server_start": ":door: **Máy chủ đang trực tuyến!**",
+    "on_server_stop": ":no_entry_sign: **Máy chủ đang ngoại tuyến.**",
+    "on_server_restart": ":recycle: Máy chủ đang khởi động lại. Quá trình này có thể mất một lúc.",
+    "on_console_chat": "`%player-message%`",
+    "on_secure_chat": "`%player-message%`",
+    "on_secure_chat_other": "`%player-message%`",
+    "on_non_secure_chat": "`%player-message%`",
+    "on_chat_from_lunachat": "`%player-message%`",
+    "on_death": ":skull_crossbones: đã chết. Hãy đến giúp! (x:%death-x%/y:%death-y%/z:%death-z%)",
+    "on_recalc_player_count": ":information_source: Có %server-count% người chơi trực tuyến (tối đa %server-max-player%).",
+    "on_advancement_complete": ":trophy: đã đạt tiến trình [%advancement-name%]!",
+    "on_goal_complete": ":checkered_flag: đã đạt mục tiêu [%goal-name%]!",
+    "on_challenge_complete": ":trophy: đã hoàn thành thử thách [%challenge-name%]!",
+    "on_achievements_complete_old": ":military_medal: đã đạt thành tựu [%challenge-name%]!",
+    "player_count_notify": ":information_source: Có %server-count% người chơi trực tuyến. Mọi người đang chờ :eyes:"
+}

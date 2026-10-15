@@ -1,0 +1,22 @@
+{
+    "on_issue_command": ":keyboard: A executat o comandă: `%player-message%`",
+    "on_join": ":green_circle: %player-name% s-a alăturat jocului. (%server-count% online)",
+    "on_left": ":red_circle: %player-name% a părăsit jocul. (%server-count% online)",
+    "on_kick": ":boot: %player-name% a fost dat afară. Motiv: `%player-message%`",
+    "on_join_non_whitelisted": ":yellow_circle: %player-name% a încercat să intre, dar nu este pe lista albă.",
+    "on_server_start": ":door: **Serverul este online!**",
+    "on_server_stop": ":no_entry_sign: **Serverul este offline.**",
+    "on_server_restart": ":recycle: Serverul se repornește. Acest lucru poate dura puțin.",
+    "on_console_chat": "`%player-message%`",
+    "on_secure_chat": "`%player-message%`",
+    "on_secure_chat_other": "`%player-message%`",
+    "on_non_secure_chat": "`%player-message%`",
+    "on_chat_from_lunachat": "`%player-message%`",
+    "on_death": ":skull_crossbones: a murit. Mergi să ajuți! (x:%death-x%/y:%death-y%/z:%death-z%)",
+    "on_recalc_player_count": ":information_source: Sunt %server-count% jucători online (maximum %server-max-player%).",
+    "on_advancement_complete": ":trophy: a obținut progresul [%advancement-name%]!",
+    "on_goal_complete": ":checkered_flag: a atins obiectivul [%goal-name%]!",
+    "on_challenge_complete": ":trophy: a finalizat provocarea [%challenge-name%]!",
+    "on_achievements_complete_old": ":military_medal: a obținut realizarea [%challenge-name%]!",
+    "player_count_notify": ":information_source: Sunt %server-count% jucători online. Toți te așteaptă :eyes:"
+}

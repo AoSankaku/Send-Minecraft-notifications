@@ -2,8 +2,6 @@
 
 import json
 import re
-from pathlib import Path
-
 import pytest
 
 from handlers.secrets import BotEnv
@@ -79,7 +77,7 @@ def test_locale_factory_selects_a_non_japanese_notification_catalog(tmp_path, lo
 
 def test_locale_factory_uses_japanese_by_default_and_rejects_unknown_locale(tmp_path):
     assert I18n.for_config(tmp_path / "config.toml").current_lang == "ja_jp"
-    with pytest.raises(ValueError, match="locale|language|言語"):
+    with pytest.raises(ValueError, match="locale|LANGUAGE|言語"):
         I18n.for_config(tmp_path / "config.toml", "unsupported")
     with pytest.raises(ValueError):
         normalize_locale("unsupported")
@@ -197,6 +195,87 @@ def test_parser_translates_titles_for_all_milestone_events(line, title, legacy, 
     assert advancement_translator.calls == [(title, legacy)]
 
 
+@pytest.mark.parametrize(
+    "header",
+    [
+        "[12:00:00] [Server thread/INFO]: ",
+        "[16Jul2024 18:04:05.111] [Server thread/INFO] "
+        "[net.minecraft.server.MinecraftServer/]: ",
+        "[12:00:00] [Server thread/INFO] [minecraft/MinecraftServer]: ",
+        "2024-07-16 18:04:05 [INFO] ",
+        "[12:00:00 INFO]: ",
+    ],
+)
+def test_milestones_accept_supported_log_headers_and_bracketed_titles(header):
+    advancement_translator = RecordingAdvancementTranslator()
+    parser = LogParser(
+        "", "", "", "", [], advancement_translator=advancement_translator
+    )
+    title = "Found [the] Hidden Room"
+
+    result = parser.parse(
+        header + f"Alice has made the advancement [{title}]",
+        EventTemplates(),
+    )
+
+    assert result is not None
+    assert result.event_id == EventIds.ON_ADVANCEMENT_COMPLETE
+    assert result.text == f"advancement {title}"
+    assert advancement_translator.calls == [(title, False)]
+
+
+def test_milestone_matching_strips_ansi_and_minecraft_colors():
+    parser = LogParser("", "", "", "", [])
+    result = parser.parse(
+        "[12:00:00] [Server thread/INFO]: \x1b[32m§aAlice has made the "
+        "advancement [Stone Age]\x1b[0m",
+        EventTemplates(),
+    )
+
+    assert result is not None
+    assert result.event_id == EventIds.ON_ADVANCEMENT_COMPLETE
+
+
+@pytest.mark.parametrize(
+    "title",
+    [
+        "Alice joined the game",
+        "Alice left the game",
+        "Done building the portal",
+        "Stopping the server simulation",
+    ],
+)
+def test_milestone_title_cannot_be_reinterpreted_as_another_event(title):
+    parser = LogParser("configured start", "configured stop", "", "", [])
+    result = parser.parse(
+        f"[12:00:00 INFO]: Bob has made the advancement [{title}]",
+        EventTemplates(),
+    )
+
+    assert result is not None
+    assert result.event_id == EventIds.ON_ADVANCEMENT_COMPLETE
+    assert result.playerId == "Bob"
+    assert result.text == f"advancement {title}"
+
+
+def test_milestone_words_inside_chat_or_commands_are_not_milestone_events():
+    parser = LogParser("", "", "", "", [])
+    chat = parser.parse(
+        "[12:00:00] [Chat thread/INFO] "
+        "[minecraft/ServerGamePacketListenerImpl]: [CHAT] "
+        "<Alice> Alice has made the advancement [Stone Age]",
+        EventTemplates(),
+    )
+    command = parser.parse(
+        "[12:00:00] [Server thread/INFO]: "
+        "[Alice: /say Bob has made the advancement [Stone Age]]",
+        EventTemplates(),
+    )
+
+    assert chat is not None and chat.event_id == EventIds.ON_SECURE_CHAT
+    assert command is not None and command.event_id == EventIds.ON_ISSUE_COMMAND
+
+
 def test_config_exposes_locale_and_advancement_translation_settings(tmp_path, monkeypatch):
     monkeypatch.setenv("WEBHOOK_URL", WEBHOOK)
     BotEnv.init(tmp_path / "not-present.toml")
@@ -209,8 +288,8 @@ def test_config_exposes_locale_and_advancement_translation_settings(tmp_path, mo
     config.write_text(
         'LANGUAGE = "pt-BR"\n'
         'ADVANCEMENT_TRANSLATION_ENABLED = false\n'
-        '[ADVANCEMENT_DICTIONARY]\n"First Village" = "A Primeira Aldeia"\n'
-        'MINECRAFT_VERSION = "1.20.1"\n',
+        'MINECRAFT_VERSION = "1.20.1"\n'
+        '[ADVANCEMENT_DICTIONARY]\n"First Village" = "A Primeira Aldeia"\n',
         encoding="utf-8",
     )
     BotEnv.init(config)

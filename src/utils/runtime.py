@@ -2,6 +2,7 @@ from pathlib import Path
 import sys
 
 from utils.config import CONFIG_FILENAME, TEMPLATE_FILENAME, write_private_config
+from message.locales import SUPPORTED_LOCALES, normalize_locale
 
 
 def resource_path(relative_path: str) -> Path:
@@ -61,9 +62,10 @@ def find_legacy_config() -> Path | None:
     return next(iter(candidates), None)
 
 
-def translation_path(config_path: Path) -> Path:
-    custom = config_path.parent / "translations" / "ja_jp.json"
-    return custom if custom.is_file() else resource_path("translations/ja_jp.json")
+def translation_path(config_path: Path, locale: str = "ja") -> Path:
+    mc_locale = SUPPORTED_LOCALES[normalize_locale(locale)]
+    custom = Path(config_path).parent / "translations" / f"{mc_locale}.json"
+    return custom if custom.is_file() else resource_path(f"translations/{mc_locale}.json")
 
 
 def create_config(config_path: Path) -> None:

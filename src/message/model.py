@@ -19,3 +19,6 @@ class MessageData:
     player_count: int | None = None
     chat_text: str | None = None
     chat_format: str | None = None
+    milestone_title: str | None = None
+    milestone_template: str | None = None
+    milestone_placeholder: str | None = None

@@ -77,7 +77,7 @@ def test_locale_factory_overlays_custom_keys_and_falls_back_to_english(
 
 
 def test_locale_factory_rejects_unknown_locale_and_invalid_custom_catalog(tmp_path):
-    with pytest.raises(ValueError, match="locale|language|言語"):
+    with pytest.raises(ValueError, match="locale|LANGUAGE|言語"):
         I18n.for_config(tmp_path / "config.toml", "xx")
 
     custom_dir = tmp_path / "translations"

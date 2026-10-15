@@ -25,6 +25,18 @@ _ANGLE_CHAT = re.compile(rf"^<(?P<player>{_PLAYER})>[ \t]*(?P<text>[\s\S]*)$")
 _COLON_CHAT = re.compile(rf"^(?P<player>{_PLAYER}):[ \t]+(?P<text>[\s\S]*)$")
 _CHANNEL_CHAT = re.compile(rf"^\[(?P<channel>[^\]\r\n]+)\][ \t]*(?:<(?P<angle>{_PLAYER})>|(?P<colon>{_PLAYER}):)[ \t]*(?P<text>[\s\S]*)$")
 _PRIVATE_CHAT = re.compile(r"^(?:\[[^\]\r\n]*(?:->|→|»)[^\]\r\n]*\]|<[^>\r\n]*(?:->|→|»)[^>\r\n]*>)")
+_MILESTONE_PATTERNS = (
+    (EventIds.ON_ADVANCEMENT_COMPLETE, re.compile(rf"^(?P<player>{_PLAYER}) has made the advancement \[(?P<title>.+)]$")),
+    (EventIds.ON_GOAL_COMPLETE, re.compile(rf"^(?P<player>{_PLAYER}) has reached the goal \[(?P<title>.+)]$")),
+    (EventIds.ON_CHALLENGE_COMPLETE, re.compile(rf"^(?P<player>{_PLAYER}) has completed the challenge \[(?P<title>.+)]$")),
+    (EventIds.ON_ACHIEVEMENTS_COMPLETE_OLD, re.compile(rf"^(?P<player>{_PLAYER}) has just earned the achievement \[(?P<title>.+)]$")),
+)
+_MILESTONE_PLACEHOLDERS = {
+    EventIds.ON_ADVANCEMENT_COMPLETE: "%advancement-name%",
+    EventIds.ON_GOAL_COMPLETE: "%goal-name%",
+    EventIds.ON_CHALLENGE_COMPLETE: "%challenge-name%",
+    EventIds.ON_ACHIEVEMENTS_COMPLETE_OLD: "%challenge-name%",
+}
 
 
 def _chat_body(line: str):
@@ -123,9 +135,11 @@ class LogParser(RegexParser):
         ignore_names: list[str],
         *,
         public_channels=(),
+        advancement_translator=None,
     ):
         super().__init__()
         self.public_channels = {channel.casefold() for channel in public_channels}
+        self.advancement_translator = advancement_translator
         ignore_names = {name.casefold() for name in ignore_names}
 
         # player issue command
@@ -196,29 +210,29 @@ class LogParser(RegexParser):
         # advancements
         self.addPrefiedRule(
             EventIds.ON_ADVANCEMENT_COMPLETE,
-            r"(.*) has made the advancement \[(.*)]",
-            lambda msg, x: MessageData(MessageType.Player, "#f8f", msg.replace("%advancement-name%", str(x[0][2])), str(x[0][1]))
+            rf"({_PLAYER}) has made the advancement \[(.+)]$",
+            self._milestone_handler(EventIds.ON_ADVANCEMENT_COMPLETE),
         )
         
         # goals
         self.addPrefiedRule(
             EventIds.ON_GOAL_COMPLETE,
-            r"(.*) has reached the goal \[(.*)]",
-            lambda msg, x: MessageData(MessageType.Player, "#f8f", msg.replace("%goal-name%", str(x[0][2])), str(x[0][1]))
+            rf"({_PLAYER}) has reached the goal \[(.+)]$",
+            self._milestone_handler(EventIds.ON_GOAL_COMPLETE),
         )
         
         # challenges
         self.addPrefiedRule(
             EventIds.ON_CHALLENGE_COMPLETE,
-            r"(.*) has completed the challenge \[(.*)]",
-            lambda msg, x: MessageData(MessageType.Player, "#f8f", msg.replace("%challenge-name%", str(x[0][2])), str(x[0][1])),
+            rf"({_PLAYER}) has completed the challenge \[(.+)]$",
+            self._milestone_handler(EventIds.ON_CHALLENGE_COMPLETE),
         )
         
         # achievements(until 17w13a)
         self.addPrefiedRule(
             EventIds.ON_ACHIEVEMENTS_COMPLETE_OLD,
-            r"(.*) has just earned the achievement \[(.*)]",
-            lambda msg, x: MessageData(MessageType.Player, "#f8f", msg.replace("%challenge-name%", str(x[0][2])), str(x[0][1]))
+            rf"({_PLAYER}) has just earned the achievement \[(.+)]$",
+            self._milestone_handler(EventIds.ON_ACHIEVEMENTS_COMPLETE_OLD),
         )
         
         # death messages(experimental feature)
@@ -227,6 +241,49 @@ class LogParser(RegexParser):
             r"(.*) (was|died|drown|withered|experienced|blew|hit|fell|went|walked|burned|tried|discovered|froze|starved|suffocated|left) (.*)",
             lambda msg, x: MessageData(MessageType.Player, "#f8f", msg.replace("%death-x%", str(x[0][1])).replace("%death-y%", str(x[0][2])).replace("%death-z%", str(x[0][3])), str(x[0][1]))
         )
+
+    def _translate_advancement(self, name: str, *, legacy: bool = False) -> str:
+        if self.advancement_translator is None:
+            return name
+        return self.advancement_translator.translate(name, legacy=legacy)
+
+    def _milestone_handler(self, event_id: EventIds):
+        placeholder = _MILESTONE_PLACEHOLDERS[event_id]
+        legacy = event_id == EventIds.ON_ACHIEVEMENTS_COMPLETE_OLD
+
+        def handle(template: str, matched: list[any]) -> MessageData:
+            title = self._translate_advancement(str(matched[0][2]), legacy=legacy)
+            return MessageData(
+                MessageType.Player,
+                "#f8f",
+                template.replace(placeholder, title),
+                str(matched[0][1]),
+                milestone_title=title,
+                milestone_template=template,
+                milestone_placeholder=placeholder,
+            )
+
+        return handle
+
+    def _parse_milestone_or_other(
+        self, original_line: str, body: str, translator: I18n | None
+    ) -> MessageData | None:
+        for event_id, pattern in _MILESTONE_PATTERNS:
+            match = pattern.fullmatch(body)
+            if match is None:
+                continue
+            rule = self.handlers[event_id]
+            translated = ">> No Translation <<"
+            if translator is not None:
+                translated = translator.translate(event_id) or "!! translation failure !!"
+            result = rule.handler(
+                translated,
+                [("", match["player"], match["title"])],
+            )
+            if result is not None:
+                result.event_id = event_id
+            return result
+        return super().parse(original_line, translator)
 
     def parse(self, text: str, translator: I18n = None) -> MessageData | None:
         decoded = _chat_body(text)
@@ -268,7 +325,7 @@ class LogParser(RegexParser):
                 match = _COLON_CHAT.fullmatch(body)
                 event = EventIds.ON_CHAT_FROM_LUNACHAT
             if match is None:
-                return super().parse(text, translator)
+                return self._parse_milestone_or_other(text, body, translator)
             player, content = match["player"], match["text"]
         template = translator.translate(event) if translator else ">> No Translation <<"
         template = template if template is not None else "%player-message%"

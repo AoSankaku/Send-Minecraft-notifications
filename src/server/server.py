@@ -11,6 +11,7 @@ from pathlib import Path
 from message.parser import LogParser, combine_chat_records
 from message.chat_japanese import JapaneseChatFormatter
 from message.webhook import DiscordWebhook
+from message.advancements import AdvancementTranslator
 from message.model import MessageType
 from message.constant import EventIds
 from message.i18n import I18n
@@ -18,7 +19,7 @@ from utils.logutil import LogUtil
 from handlers.secrets import BotEnv
 from server.state import ServerState
 from server.script_state import ScriptState
-from utils.runtime import default_config_path, translation_path
+from utils.runtime import default_config_path
 
 class Server:
     def __init__(self, debug_mode: bool = False):
@@ -37,6 +38,7 @@ class Server:
         self.webhook: DiscordWebhook | None = None
         self.parser: LogParser
         self.i18n: I18n
+        self.advancement_translator: AdvancementTranslator | None = None
         self.chat_japanese = JapaneseChatFormatter()
         pass
     
@@ -53,10 +55,15 @@ class Server:
         self.tips_messages = json.loads(BotEnv.TipsMessages.get())
         self.logger.info("Environment variables loaded.")
         
-        self.i18n = I18n()
-        self.logger.info("Loading ja_jp lang...")
-        if not self.i18n.load_translation("ja_jp", str(translation_path(config_path))):
-            raise ValueError("Japanese translation file is missing.")
+        locale = BotEnv.Language.get()
+        self.i18n = I18n.for_config(config_path, locale)
+        self.logger.info("Notification language loaded.", language=locale)
+        self.advancement_translator = AdvancementTranslator(
+            locale=locale,
+            enabled=BotEnv.AdvancementTranslationEnabled.getBool(),
+            dictionary=json.loads(BotEnv.AdvancementDictionary.get()),
+            minecraft_version=BotEnv.MinecraftVersion.get(),
+        )
         self.logger.info("Translator initialized.")
         
         self.webhook = DiscordWebhook(
@@ -75,6 +82,7 @@ class Server:
             BotEnv.RestartAnnouncementMessage.get(),
             json.loads(BotEnv.OtherIgnoreNames.get()),
             public_channels=json.loads(BotEnv.JapanizePublicChannels.get()),
+            advancement_translator=self.advancement_translator,
         )
         self.logger.info("LogParser initialized.")
         
@@ -129,7 +137,16 @@ class Server:
             result.text = self.chat_japanese.format_message(result.chat_text, result.chat_format or "")
             if not result.text:
                 return
-        result.text = self.replace_additional_data(result.text)
+        if (
+            result.milestone_title is not None
+            and result.milestone_template is not None
+            and result.milestone_placeholder is not None
+        ):
+            result.text = self.replace_additional_data(result.milestone_template).replace(
+                result.milestone_placeholder, result.milestone_title
+            )
+        else:
+            result.text = self.replace_additional_data(result.text)
         
         self.logger.debug("Sending", message=result.text)
         match result.msg_type:

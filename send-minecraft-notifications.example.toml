@@ -72,3 +72,21 @@ JAPANIZE_SERVER_FORMAT = ""
 # Only explicitly approved PUBLIC channel names. Do not add private channels.
 # 公開と確認したチャンネル名だけ指定します。私信チャンネルは設定しないでください。
 JAPANIZE_PUBLIC_CHANNELS = []
+
+# Notification event language. Available codes include ja, en, zh-CN, zh-TW,
+# zh-HK, hi, es, fr, de, pt-BR, pt-PT, ru, ar, id, ko, vi, tr, it, pl,
+# cs, ms, and ro. Missing translations fall back to English.
+# 通知言語です。省略時は日本語です。進捗・実績名は以下で別途有効／無効にできます。
+LANGUAGE = "ja"
+
+# Translate known vanilla advancement, goal, challenge, and legacy achievement titles.
+# 既知のバニラ進捗・目標・挑戦・旧実績名を翻訳します。不明な名前は原文のままです。
+ADVANCEMENT_TRANSLATION_ENABLED = true
+# Optional exact English-title overrides, including names from mods.
+# MOD独自の名前も含め、英語タイトルから表示名への任意の上書き辞書です。
+ADVANCEMENT_DICTIONARY = {}
+# Leave empty for historical English aliases and the newest translation per key.
+# Different keys with conflicting translations keep their original English name.
+# 空欄では過去の英語名を認識し、同じキーの最新の収録訳を使います。
+# 同じ英語名が別のキーで異なる訳を持つ場合は原文を残します。
+MINECRAFT_VERSION = ""

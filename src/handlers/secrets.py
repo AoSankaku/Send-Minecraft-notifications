@@ -9,6 +9,8 @@ from typing import Self
 from utils.config import TEMPLATE_FILENAME, load_config_values
 from utils.runtime import default_config_path, resource_path
 from message.chat_japanese import validate_server_format
+from message.locales import normalize_locale
+from message.advancements import validate_dictionary
 
 
 def _is_bool_str(s: str) -> bool:
@@ -57,7 +59,7 @@ def _validate_env(name: Self, value: str) -> str | None:
                 or not re.fullmatch(r"/api/webhooks/[0-9]{17,20}/[A-Za-z0-9._-]{60,}", url.path)
             ):
                 return None
-        case BotEnv.KillAfterClosed | BotEnv.JapanizeEnabled:
+        case BotEnv.KillAfterClosed | BotEnv.JapanizeEnabled | BotEnv.AdvancementTranslationEnabled:
             if not _is_bool_str(value):
                 return None
         case BotEnv.EmbedMode:
@@ -65,6 +67,16 @@ def _validate_env(name: Self, value: str) -> str | None:
                 return None
         case BotEnv.JapanizeMode:
             return value.casefold() if value.casefold() in {"auto", "local", "server"} else None
+        case BotEnv.Language:
+            try:
+                return normalize_locale(value)
+            except ValueError:
+                return None
+        case BotEnv.AdvancementDictionary:
+            try:
+                validate_dictionary(json.loads(value))
+            except (TypeError, ValueError):
+                return None
         case BotEnv.JapanizeDictionary:
             try:
                 dictionary = json.loads(value)
@@ -145,6 +157,12 @@ class BotEnv(StrEnum):
     JapanizeDictionary = "JAPANIZE_DICTIONARY"
     JapanizeServerFormat = "JAPANIZE_SERVER_FORMAT"
     JapanizePublicChannels = "JAPANIZE_PUBLIC_CHANNELS"
+
+    # Notification locale and advancement title translations.
+    Language = "LANGUAGE"
+    AdvancementTranslationEnabled = "ADVANCEMENT_TRANSLATION_ENABLED"
+    AdvancementDictionary = "ADVANCEMENT_DICTIONARY"
+    MinecraftVersion = "MINECRAFT_VERSION"
 
     @staticmethod
     def init(env_path: str | Path | None = None):

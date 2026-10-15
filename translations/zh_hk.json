@@ -1,0 +1,22 @@
+{
+    "on_issue_command": ":keyboard: 執行了指令：`%player-message%`",
+    "on_join": ":green_circle: %player-name% 加入了遊戲。（目前線上 %server-count% 人）",
+    "on_left": ":red_circle: %player-name% 離開了遊戲。（目前線上 %server-count% 人）",
+    "on_kick": ":boot: 管理員踢走了 %player-name%。原因：`%player-message%`",
+    "on_join_non_whitelisted": ":yellow_circle: %player-name% 嘗試加入伺服器，但不在白名單內！",
+    "on_server_start": ":door: **伺服器已啟動！**",
+    "on_server_stop": ":no_entry_sign: **伺服器已關閉。**",
+    "on_server_restart": ":recycle: 伺服器正在重新啟動，可能需要一些時間。",
+    "on_console_chat": "`%player-message%`",
+    "on_secure_chat": "`%player-message%`",
+    "on_secure_chat_other": "`%player-message%`",
+    "on_non_secure_chat": "`%player-message%`",
+    "on_chat_from_lunachat": "`%player-message%`",
+    "on_death": ":skull_crossbones: 死亡了，快去幫幫忙！(x:%death-x%/y:%death-y%/z:%death-z%)",
+    "on_recalc_player_count": ":information_source: 目前有 %server-count% 名玩家在線。（上限 %server-max-player% 人）",
+    "on_advancement_complete": ":trophy: 獲得了進度 [%advancement-name%]！",
+    "on_goal_complete": ":checkered_flag: 達成了目標 [%goal-name%]！",
+    "on_challenge_complete": ":trophy: 完成了挑戰 [%challenge-name%]！",
+    "on_achievements_complete_old": ":military_medal: 獲得了成就 [%challenge-name%]！",
+    "player_count_notify": ":information_source: 目前有 %server-count% 名玩家在線，大家都在等你 :eyes:"
+}

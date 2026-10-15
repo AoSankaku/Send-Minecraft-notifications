@@ -117,6 +117,18 @@ def test_custom_dictionary_can_resolve_an_ambiguous_name(tmp_path):
     assert translator.translate("Same") == "管理者指定"
 
 
+def test_auto_uses_latest_wording_for_same_key_and_keeps_old_english_alias(tmp_path):
+    path = tmp_path / "minecraft.json"
+    path.write_text(json.dumps({"schema": 1, "versions": {
+        "old": {"en": {"advancements.a.title": "Old name"}, "ja": {}},
+        "new": {"en": {"advancements.a.title": "New name"}, "ja": {"advancements.a.title": "最新の訳"}},
+    }}), encoding="utf-8")
+    translator = AdvancementTranslator("ja", catalog_path=path)
+    assert translator.translate("Old name") == "最新の訳"
+    assert translator.translate("New name") == "最新の訳"
+    assert AdvancementTranslator("ja", minecraft_version="old", catalog_path=path).translate("Old name") == "Old name"
+
+
 def test_unknown_catalog_version_has_actionable_error():
     with pytest.raises(ValueError, match="MINECRAFT_VERSION"):
         AdvancementTranslator("ja", minecraft_version="unavailable-version")
@@ -139,8 +151,9 @@ def test_bundled_catalog_has_all_locales_and_reproducible_source_metadata():
         assert set(languages) == LOCALES, version
         assert languages["en"]
         for language, names in languages.items():
-            assert names, (version, language)
             assert set(names) <= set(languages["en"])
             assert all(isinstance(value, str) and value for value in names.values())
+    for locale in LOCALES:
+        assert any(languages[locale] for languages in catalog["versions"].values()), locale
     assert catalog["sources"]
     assert all(source["url"].startswith("https://") and len(source["sha1"]) == 40 for source in catalog["sources"])

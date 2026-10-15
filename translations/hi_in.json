@@ -1,0 +1,22 @@
+{
+    "on_issue_command": ":keyboard: कमांड चलाया: `%player-message%`",
+    "on_join": ":green_circle: %player-name% खेल में शामिल हुआ। (ऑनलाइन %server-count%)",
+    "on_left": ":red_circle: %player-name% खेल से चला गया। (ऑनलाइन %server-count%)",
+    "on_kick": ":boot: %player-name% को सर्वर से निकाल दिया गया। कारण: `%player-message%`",
+    "on_join_non_whitelisted": ":yellow_circle: %player-name% ने जुड़ने की कोशिश की, लेकिन वह अनुमति सूची में नहीं है।",
+    "on_server_start": ":door: **सर्वर चालू है!**",
+    "on_server_stop": ":no_entry_sign: **सर्वर बंद है।**",
+    "on_server_restart": ":recycle: सर्वर रीस्टार्ट हो रहा है। इसमें कुछ समय लग सकता है।",
+    "on_console_chat": "`%player-message%`",
+    "on_secure_chat": "`%player-message%`",
+    "on_secure_chat_other": "`%player-message%`",
+    "on_non_secure_chat": "`%player-message%`",
+    "on_chat_from_lunachat": "`%player-message%`",
+    "on_death": ":skull_crossbones: की मृत्यु हो गई। मदद के लिए जाएँ! (x:%death-x%/y:%death-y%/z:%death-z%)",
+    "on_recalc_player_count": ":information_source: %server-count% खिलाड़ी ऑनलाइन हैं। (अधिकतम %server-max-player%)",
+    "on_advancement_complete": ":trophy: ने प्रगति [%advancement-name%] हासिल की!",
+    "on_goal_complete": ":checkered_flag: ने लक्ष्य [%goal-name%] पूरा किया!",
+    "on_challenge_complete": ":trophy: ने चुनौती [%challenge-name%] पूरी की!",
+    "on_achievements_complete_old": ":military_medal: ने उपलब्धि [%challenge-name%] हासिल की!",
+    "player_count_notify": ":information_source: %server-count% खिलाड़ी ऑनलाइन हैं। सभी आपका इंतज़ार कर रहे हैं :eyes:"
+}

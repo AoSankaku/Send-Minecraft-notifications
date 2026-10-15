@@ -113,6 +113,50 @@ TARGET_FILE = "latest.log"
 - TOMLの二重引用符で囲んだ文字列に書いた `\n` は設定読込時に改行になります。
 - メッセージテンプレートなど、追加の設定項目は `send-minecraft-notifications.example.toml` を参照してください。使わない任意項目は初期値のままにできます。
 
+### 進捗・実績の翻訳と通知言語（v1.0.0-beta1 の次のビルド以降）
+
+進捗・目標・挑戦・旧実績の名前を、Minecraftの言語データを使ってオフラインで翻訳します。既定は日本語です。Minecraft本体の解析、サーバーへのMod追加、外部翻訳APIは不要です。通知文も選択した言語になります。
+
+```toml
+LANGUAGE = "ja"
+ADVANCEMENT_TRANSLATION_ENABLED = true
+```
+
+日本語では `Stone Age` を `石器時代`、旧実績の `Taking Inventory` を `所持品の確認` と表示します。翻訳できない名前は原文を残します。英語表示には `LANGUAGE = "en"` を指定します。設定を変更した後は通知プログラムを再起動してください。
+
+| コード | 言語・地域 | コード | 言語・地域 |
+| --- | --- | --- | --- |
+| `ja` | 日本語 | `en` | 英語 |
+| `zh-CN` | 中国語（簡体字・中国） | `zh-TW` | 中国語（繁体字・台湾） |
+| `zh-HK` | 中国語（繁体字・香港） | `hi` | ヒンディー語 |
+| `es` | スペイン語 | `fr` | フランス語 |
+| `de` | ドイツ語 | `pt-BR` | ポルトガル語（ブラジル） |
+| `pt-PT` | ポルトガル語（ポルトガル） | `ru` | ロシア語 |
+| `ar` | アラビア語 | `id` | インドネシア語 |
+| `ko` | 韓国語 | `vi` | ベトナム語 |
+| `tr` | トルコ語 | `it` | イタリア語 |
+| `pl` | ポーランド語 | `cs` | チェコ語 |
+| `ms` | マレー語 | `ro` | ルーマニア語 |
+
+`ja_jp`、`en_us`、`pt_br` などのMinecraft側のコードも利用できます。通知言語は1つを選択します。複数言語の同時配信は行いません。
+
+Modやデータパック独自の名前、好みの訳は追加辞書で指定できます。キーはログに出る名前、値は選択した通知言語での表示です。完全一致で、同梱辞書より優先します。
+
+```toml
+LANGUAGE = "ja"
+ADVANCEMENT_DICTIONARY = { "The Factory Must Grow!" = "工場を拡大せよ！" }
+```
+
+同梱データは `1.11.2`、`1.12.2`、`1.16.5`、`1.20.1`、`1.21.11`、`26.3` の公式言語リソースから作成しています。これは辞書の収録元であり、サーバーのバージョンを自動検出する機能ではありません。既定の `MINECRAFT_VERSION = ""` は、同じ翻訳キーについて最新の収録訳を使い、過去の英語名も認識します。収録版の訳に固定する場合は `MINECRAFT_VERSION = "1.20.1"` のように指定します。未収録の版は設定エラーになるため、通常は空欄のままにしてください。
+
+通常ログには翻訳キーや進捗IDが残らないため、同じ英語名が別のキーで異なる訳を持つ場合は推測せず原文を残します。追加辞書で表示を指定できます。公式の訳がない項目や、未収録の新しい名前も原文のままです。旧版で存在しなかった言語・地域には、その版の翻訳がありません。任意のModや独自ログ書式への完全対応は保証していません。
+
+名前の翻訳だけを止める場合は `ADVANCEMENT_TRANSLATION_ENABLED = false` にします。管理者が設定する `SERVER_START_MESSAGE`、`SERVER_STOP_MESSAGE`、`SERVER_RESTART_MESSAGE`、`TIPS_MESSAGES` は設定した文章のまま使用します。これらも必要に応じて選択言語の文章に変更してください。チャットのローマ字→日本語変換は、下記の `JAPANIZE_*` による独立した設定です。
+
+通知テンプレートは、設定ファイルと同じフォルダーの `translations/<Minecraft言語コード>.json` で必要なキーだけ上書きできます。例：`translations/fr_fr.json` の `{"on_advancement_complete": ":trophy: %advancement-name% !"}`。未指定のキーは同梱の選択言語、そこにもなければ英語にフォールバックします。進捗名の追加辞書には `ADVANCEMENT_DICTIONARY` を使ってください。
+
+言語データの取得元・更新手順は [Minecraft翻訳データ](translations/MINECRAFT_SOURCES.md) を参照してください。
+
 ### ローマ字チャットの日本語表示（v1.0.0-beta1 の次のビルド以降）
 
 `send-minecraft-notifications.toml` に次を追加して再起動すると、Discordへ原文と日本語変換を併記します。既存の設定に追加しなければ無効のままです。
@@ -324,6 +368,16 @@ Common Vanilla/Fabric, Forge/NeoForge, Paper/Spigot async, and old INFO log layo
 LunaChat's default single-line `original (Japanese)` and Tsuki Chat's same-record `original` followed by an unprefixed `→ Japanese` continuation are recognized. For LunaChat, enable normal console chat and single-line Japanize display. A custom `JAPANIZE_SERVER_FORMAT` must contain `{original}` and `{japanese}` once each, for example `{original} => [{japanese}]`; it is a literal template. Anonymous separate `[JP]` / arrow records may belong to private messages and are never guessed or forwarded. Results visible only in-game cannot be recovered from logs; `auto` falls back to local conversion. The server plugin's own network settings are independent of this tool.
 
 Named channels are excluded by default because a name does not prove a channel is public. Only list channels you have verified are public, e.g. `JAPANIZE_PUBLIC_CHANNELS = ["global"]`. Private-message and unrecognized channel layouts remain excluded.
+
+### Advancement translation and notification languages (builds after v1.0.0-beta1)
+
+Set `LANGUAGE = "ja"` (the default) or one of `en`, `zh-CN`, `zh-TW`, `zh-HK`, `hi`, `es`, `fr`, `de`, `pt-BR`, `pt-PT`, `ru`, `ar`, `id`, `ko`, `vi`, `tr`, `it`, `pl`, `cs`, `ms`, `ro`. Minecraft aliases such as `en_us` and `pt_br` are also accepted. One language is selected for event notifications and advancement, goal, challenge, and legacy achievement names. Restart after changing configuration.
+
+Translation uses bundled, official Minecraft language data offline, with no game decompilation, server mod, or translation API. `ADVANCEMENT_TRANSLATION_ENABLED = false` preserves original names while keeping the selected event language. Unknown names and names with conflicting translations across different keys stay unchanged. `ADVANCEMENT_DICTIONARY = { "Custom English Title" = "Your translation" }` provides exact overrides for the currently selected language, including mod/datapack names.
+
+Bundled source snapshots are `1.11.2`, `1.12.2`, `1.16.5`, `1.20.1`, `1.21.11`, and `26.3`; these are dictionary sources, not an automatically detected server version or a runtime compatibility matrix. The default `MINECRAFT_VERSION = ""` recognizes historical English aliases and uses the newest available wording for each translation key. Set a bundled version explicitly to use its exact translations. Unsupported explicit versions are configuration errors. Some older locales or entries have no official translation; missing translations remain unchanged. No complete coverage of arbitrary mods or custom log formats is promised.
+
+Administrator-written `SERVER_START_MESSAGE`, `SERVER_STOP_MESSAGE`, `SERVER_RESTART_MESSAGE`, and `TIPS_MESSAGES` stay as configured; change their text separately when needed. `JAPANIZE_*` chat conversion settings remain independent. A local `translations/<Minecraft-locale>.json` beside the config can override individual event templates; missing keys fall back to the bundled selected language and then English. See [data sources and maintenance](translations/MINECRAFT_SOURCES.md).
 
 ### Additional configuration
 

@@ -1,0 +1,22 @@
+{
+    "on_issue_command": ":keyboard: Ha eseguito un comando: `%player-message%`",
+    "on_join": ":green_circle: %player-name% è entrato. (%server-count% online)",
+    "on_left": ":red_circle: %player-name% è uscito. (%server-count% online)",
+    "on_kick": ":boot: %player-name% è stato espulso. Motivo: `%player-message%`",
+    "on_join_non_whitelisted": ":yellow_circle: %player-name% ha provato a entrare, ma non è nella lista consentita.",
+    "on_server_start": ":door: **Il server è online!**",
+    "on_server_stop": ":no_entry_sign: **Il server è offline.**",
+    "on_server_restart": ":recycle: Il server si sta riavviando. Potrebbe volerci un po'.",
+    "on_console_chat": "`%player-message%`",
+    "on_secure_chat": "`%player-message%`",
+    "on_secure_chat_other": "`%player-message%`",
+    "on_non_secure_chat": "`%player-message%`",
+    "on_chat_from_lunachat": "`%player-message%`",
+    "on_death": ":skull_crossbones: è morto. Vai ad aiutarlo! (x:%death-x%/y:%death-y%/z:%death-z%)",
+    "on_recalc_player_count": ":information_source: Ci sono %server-count% giocatori online (massimo %server-max-player%).",
+    "on_advancement_complete": ":trophy: ha ottenuto l'avanzamento [%advancement-name%]!",
+    "on_goal_complete": ":checkered_flag: ha raggiunto l'obiettivo [%goal-name%]!",
+    "on_challenge_complete": ":trophy: ha completato la sfida [%challenge-name%]!",
+    "on_achievements_complete_old": ":military_medal: ha ottenuto il traguardo [%challenge-name%]!",
+    "player_count_notify": ":information_source: Ci sono %server-count% giocatori online. Ti aspettano tutti :eyes:"
+}

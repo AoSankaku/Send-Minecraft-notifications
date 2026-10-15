@@ -1,17 +1,19 @@
 import argparse
 import asyncio
+import json
 import os
 from pathlib import Path
 import sys
 import traceback
 
 from handlers.secrets import BotEnv
+from message.advancements import AdvancementTranslator
 from message.i18n import I18n
 from server.server import Server
 from utils.config import TEMPLATE_FILENAME, migrate_legacy_config
 from utils.runtime import (
     config_in_directory, create_config, default_config_path, find_legacy_config,
-    resource_path, translation_path,
+    resource_path,
 )
 
 
@@ -89,9 +91,14 @@ def cli(argv: list[str] | None = None) -> int:
         if args.config is not None and not config_path.is_file():
             raise ValueError(f"Configuration file not found: {config_path}")
         BotEnv.init(config_path)
-        translator = I18n()
-        if not translator.load_translation("ja_jp", str(translation_path(config_path))):
-            raise ValueError("Japanese translation file is missing.")
+        locale = BotEnv.Language.get()
+        I18n.for_config(config_path, locale)
+        AdvancementTranslator(
+            locale=locale,
+            enabled=BotEnv.AdvancementTranslationEnabled.getBool(),
+            dictionary=json.loads(BotEnv.AdvancementDictionary.get()),
+            minecraft_version=BotEnv.MinecraftVersion.get(),
+        )
         if args.check_config:
             print("Configuration and translations are valid. No notifications were sent.")
             return 0

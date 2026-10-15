@@ -1,0 +1,22 @@
+{
+    "on_issue_command": ":keyboard: نفّذ أمرًا: `%player-message%`",
+    "on_join": ":green_circle: انضم %player-name% إلى اللعبة. (المتصلون: %server-count%)",
+    "on_left": ":red_circle: غادر %player-name% اللعبة. (المتصلون: %server-count%)",
+    "on_kick": ":boot: تم طرد %player-name%. السبب: `%player-message%`",
+    "on_join_non_whitelisted": ":yellow_circle: حاول %player-name% الانضمام، لكنه ليس في القائمة البيضاء.",
+    "on_server_start": ":door: **الخادم متصل الآن!**",
+    "on_server_stop": ":no_entry_sign: **الخادم غير متصل.**",
+    "on_server_restart": ":recycle: يجري إعادة تشغيل الخادم. قد يستغرق ذلك بعض الوقت.",
+    "on_console_chat": "`%player-message%`",
+    "on_secure_chat": "`%player-message%`",
+    "on_secure_chat_other": "`%player-message%`",
+    "on_non_secure_chat": "`%player-message%`",
+    "on_chat_from_lunachat": "`%player-message%`",
+    "on_death": ":skull_crossbones: مات. اذهب لمساعدته! (x:%death-x%/y:%death-y%/z:%death-z%)",
+    "on_recalc_player_count": ":information_source: يوجد %server-count% لاعبًا متصلًا (الحد الأقصى %server-max-player%).",
+    "on_advancement_complete": ":trophy: أحرز التقدم [%advancement-name%]!",
+    "on_goal_complete": ":checkered_flag: حقق الهدف [%goal-name%]!",
+    "on_challenge_complete": ":trophy: أكمل التحدي [%challenge-name%]!",
+    "on_achievements_complete_old": ":military_medal: أحرز الإنجاز [%challenge-name%]!",
+    "player_count_notify": ":information_source: يوجد %server-count% لاعبًا متصلًا. الجميع بانتظارك :eyes:"
+}
