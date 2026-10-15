@@ -126,6 +126,7 @@ class LogParser(RegexParser):
     ):
         super().__init__()
         self.public_channels = {channel.casefold() for channel in public_channels}
+        ignore_names = {name.casefold() for name in ignore_names}
 
         # player issue command
         self.addPrefiedRule(

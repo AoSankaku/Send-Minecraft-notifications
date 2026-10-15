@@ -1,14 +1,12 @@
-import os
 import json
 import re
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from dotenv import dotenv_values
 from enum import StrEnum
 from typing import Self
 
-from utils.miscutil import normalize_message_newlines
+from utils.config import TEMPLATE_FILENAME, load_config_values
 from utils.runtime import default_config_path, resource_path
 from message.chat_japanese import validate_server_format
 
@@ -91,7 +89,7 @@ def _validate_env(name: Self, value: str) -> str | None:
                 return None
         case BotEnv.JapanizeServerFormat:
             try:
-                return validate_server_format(normalize_message_newlines(value))
+                return validate_server_format(value)
             except ValueError:
                 return None
         case BotEnv.TipsMessages:
@@ -101,8 +99,6 @@ def _validate_env(name: Self, value: str) -> str | None:
                 return None
             if not isinstance(tips, list) or not tips or not all(isinstance(tip, str) for tip in tips):
                 return None
-        case BotEnv.ServerStartMessage | BotEnv.ServerStopMessage | BotEnv.ServerRestartMessage | BotEnv.TipsPrefix:
-            return normalize_message_newlines(value)
     # finish
     return value
 
@@ -152,11 +148,8 @@ class BotEnv(StrEnum):
 
     @staticmethod
     def init(env_path: str | Path | None = None):
-        config_path = Path(env_path).resolve() if env_path is not None else default_config_path()
-        values = dict(dotenv_values(resource_path(".env.example"), encoding="utf-8"))
-        if config_path.is_file():
-            values.update(dotenv_values(config_path, encoding="utf-8-sig"))
-        values.update({name.value: os.environ[name.value] for name in BotEnv if name.value in os.environ})
+        config_path = Path(env_path).absolute() if env_path is not None else default_config_path()
+        values = load_config_values(config_path, resource_path(TEMPLATE_FILENAME))
         _env_data.clear()
         for _e in BotEnv:
             _loadEnvWithValidate(_e, values)

@@ -147,7 +147,7 @@ class PreviousWindowsExecutableCleanupTests(unittest.TestCase):
         current = self.write_executable("smn-main-7654321.exe", b"current binary")
         linux_binary = self.write_executable("send-minecraft-notifications-linux-x64", b"linux")
         archive = self.write_executable("send-minecraft-notifications-windows-x64.zip", b"zip")
-        env_example = self.write_executable(".env.example", b"template")
+        config_example = self.write_executable("send-minecraft-notifications.example.toml", b"template")
         self.checksum_path.write_text(
             self.checksum_line(old_legacy.read_bytes(), old_legacy.name)
             + self.checksum_line(old_dynamic.read_bytes(), old_dynamic.name)
@@ -162,7 +162,7 @@ class PreviousWindowsExecutableCleanupTests(unittest.TestCase):
         self.assertEqual(set(removed), {old_legacy, old_dynamic})
         self.assertFalse(old_legacy.exists())
         self.assertFalse(old_dynamic.exists())
-        for retained in (current, linux_binary, archive, env_example):
+        for retained in (current, linux_binary, archive, config_example):
             self.assertTrue(retained.exists())
 
     def test_ignores_path_traversal_unrelated_and_malformed_entries(self):
@@ -220,6 +220,41 @@ class PreviousWindowsExecutableCleanupTests(unittest.TestCase):
         self.assertEqual(removed, [])
         self.assertTrue(link.is_symlink())
         self.assertTrue(target.exists())
+
+
+class ReleaseArchiveTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent)
+        self.addCleanup(temporary.cleanup)
+        self.archive = Path(temporary.name) / "release.zip"
+
+    def write_archive(self, members: dict[str, bytes]) -> set[str]:
+        with build_release.zipfile.ZipFile(self.archive, "w") as output:
+            for name, content in members.items():
+                output.writestr(name, content)
+        return set(members)
+
+    def test_allows_public_toml_template_but_no_local_config(self):
+        members = {
+            "smn-main-123abcd.exe": b"binary",
+            "README.md": b"docs",
+            "LICENSE": b"license",
+            "send-minecraft-notifications.example.toml": b"template",
+        }
+        build_release.validate_archive(self.archive, self.write_archive(members))
+
+        for secret_name in (
+            "send-minecraft-notifications.toml",
+            ".env",
+            ".env.local",
+            ".env-backup",
+            ".env.example",
+            ".send-minecraft-notifications.toml.random.tmp",
+        ):
+            with self.subTest(secret_name=secret_name):
+                unsafe = members | {secret_name: b"synthetic secret"}
+                with self.assertRaisesRegex(RuntimeError, "must never be included"):
+                    build_release.validate_archive(self.archive, self.write_archive(unsafe))
 
 
 if __name__ == "__main__":

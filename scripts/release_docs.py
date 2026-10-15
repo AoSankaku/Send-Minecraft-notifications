@@ -14,6 +14,8 @@ from urllib.parse import quote
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REPOSITORY = "AoSankaku/Send-Minecraft-notifications"
 PRODUCT = "send-minecraft-notifications"
+LEGACY_CONFIG_TAGS = {"v1.0.0-beta0", "v1.0.0-beta1"}
+CONFIG_FILENAME = f"{PRODUCT}.toml"
 
 
 def validate_inputs(tag: str, repository: str, windows_exe: str) -> None:
@@ -30,24 +32,31 @@ def installation_section(tag: str, repository: str, windows_exe: str, language: 
     release_url = f"https://github.com/{repository}/releases/tag/{quote(tag, safe='')}"
     download_url = f"https://github.com/{repository}/releases/download/{quote(tag, safe='')}"
     linux = f"{PRODUCT}-linux-x64"
+    legacy_config = tag in LEGACY_CONFIG_TAGS
     if language == "ja":
         introduction = f"対象リリース: [{tag}]({release_url})。Python のインストールや ZIP の展開は不要です。設定を書き込めるフォルダーで実行してください。"
         linux_title = "Ubuntu Server / Linux x64 でのダウンロードと起動"
         checksum = "任意で、実行前に同じリリースのチェックサムで検証します。未取得の ZIP は検査対象から外れます。"
-        first_run = "実行権限を付けて初回起動します。同じフォルダーに `.env` の雛形を作成して終了します。"
-        configure_linux = "エディターで `.env` の `WEBHOOK_URL` と `TARGET_DIR`（Minecraft サーバーのログフォルダー）を設定してから、設定を検査して起動します。"
+        config_name = "`.env`" if legacy_config else f"`{CONFIG_FILENAME}`"
+        first_run = ("実行権限を付けて初回起動します。同じフォルダーに `.env` の雛形を作成して終了します。"
+                     if legacy_config else f"実行権限を付けて初回起動します。旧 `.env` がなければ同じフォルダーに `{CONFIG_FILENAME}` の雛形を作成して終了します。旧設定が見つかれば、元ファイルを残して同じフォルダーに変換します。")
+        configure_linux = f"エディターで {config_name} の `WEBHOOK_URL` と `TARGET_DIR`（Minecraft サーバーのログフォルダー）を設定してから、設定を検査して起動します。"
         windows_title = "Windows x64 / PowerShell でのダウンロードと起動"
-        configure_windows = "初回起動で作られた `.env` をエディターで開き、`WEBHOOK_URL` と `TARGET_DIR` を設定してから、次を実行します。"
-        curl_help = "`-L` は GitHub の転送先を追い、`-o` はファイルに保存し、`-f` は HTTP エラー時に失敗させます。既存の `.env` は上書きされません。設定検査では Discord へ送信しません。"
+        configure_windows = f"初回起動で作られた {config_name} をエディターで開き、`WEBHOOK_URL` と `TARGET_DIR` を設定してから、次を実行します。"
+        preserved_file = "`.env`" if legacy_config else f"`{CONFIG_FILENAME}`"
+        curl_help = f"`-L` は GitHub の転送先を追い、`-o` はファイルに保存し、`-f` は HTTP エラー時に失敗させます。既存の {preserved_file} は上書きされません。設定検査では Discord へ送信しません。"
     elif language == "en":
         introduction = f"Release: [{tag}]({release_url}). No Python installation or ZIP extraction is required. Run these commands in a writable directory."
         linux_title = "Ubuntu Server / Linux x64 download and startup"
         checksum = "Optionally verify the checksum before execution. The ZIP is ignored if it was not downloaded."
-        first_run = "Make the binary executable, then run it once to create a `.env` template beside it and exit."
-        configure_linux = "Use an editor to set `WEBHOOK_URL` and `TARGET_DIR` (your Minecraft server's log directory) in `.env`. Validate the settings, then start the notifier:"
+        config_name = "`.env`" if legacy_config else f"`{CONFIG_FILENAME}`"
+        first_run = ("Make the binary executable, then run it once to create a `.env` template beside it and exit."
+                     if legacy_config else f"Make the binary executable, then run it once. Without legacy settings, it creates a `{CONFIG_FILENAME}` template beside it and exits. If old settings are found, it converts them in place and preserves the `.env` file.")
+        configure_linux = f"Use an editor to set `WEBHOOK_URL` and `TARGET_DIR` (your Minecraft server's log directory) in {config_name}. Validate the settings, then start the notifier:"
         windows_title = "Windows x64 / PowerShell download and startup"
-        configure_windows = "Open the generated `.env` in an editor and set `WEBHOOK_URL` and `TARGET_DIR`, then run:"
-        curl_help = "`-L` follows GitHub redirects, `-o` saves to a file, and `-f` fails on HTTP errors. Existing `.env` files are preserved. Configuration checks do not send Discord notifications."
+        configure_windows = f"Open the generated {config_name} in an editor and set `WEBHOOK_URL` and `TARGET_DIR`, then run:"
+        preserved_file = "`.env` files" if legacy_config else f"`{CONFIG_FILENAME}` files"
+        curl_help = f"`-L` follows GitHub redirects, `-o` saves to a file, and `-f` fails on HTTP errors. Existing {preserved_file} are preserved. Configuration checks do not send Discord notifications."
     else:
         raise ValueError(f"Unsupported language: {language}")
 
@@ -99,11 +108,35 @@ curl.exe -fL -o {windows_exe} `
 
 {curl_help}
 
-{legacy_configuration_section(windows_exe, language)}
+{legacy_configuration_section(windows_exe, language, legacy=legacy_config)}
 """
 
 
-def legacy_configuration_section(windows_exe: str, language: str) -> str:
+def legacy_configuration_section(windows_exe: str, language: str, *, legacy: bool) -> str:
+    if not legacy:
+        if language == "ja":
+            title = "旧Python版の設定を引き継ぐ"
+            description = (f"旧Python版のフォルダーまたは `.env` を `--config` に指定できます。初回は同じフォルダーに `{CONFIG_FILENAME}` を作成し、元の `.env` は変更せず残します。"
+                           "作成後は新しいTOML設定を優先します。相対パスは設定ファイルのあるフォルダーを基準にします。")
+        else:
+            title = "Reuse settings from the legacy Python version"
+            description = (f"Pass the old Python installation directory or its `.env` file to `--config`. The first run creates `{CONFIG_FILENAME}` in the same directory and preserves the original `.env`."
+                           " Later runs prefer the TOML file. Relative paths remain based on the selected configuration directory.")
+        return f"""### {title}
+
+{description}
+
+```sh
+./{PRODUCT}-linux-x64 --config /path/to/Send-Minecraft-notifications --check-config
+./{PRODUCT}-linux-x64 --config /path/to/Send-Minecraft-notifications/.env
+```
+
+```powershell
+.\\{windows_exe} --config 'C:\\path\\to\\Send-Minecraft-notifications' --check-config
+.\\{windows_exe} --config 'C:\\path\\to\\Send-Minecraft-notifications\\.env'
+```
+"""
+
     if language == "ja":
         title = "旧Python版の .env を引き継ぐ"
         description = "旧版の `.env` を `--config` で直接指定して起動できます。元の設定は変更されず、`TARGET_DIR` と `PLUGIN_DIR` の相対パスも旧 `.env` のフォルダーを基準に解決されます。設定を検査した後、同じ引数を付けて起動してください。パスは実際の旧版の場所へ置き換えます。"

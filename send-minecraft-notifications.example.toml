@@ -1,0 +1,74 @@
+# Send Minecraft Notifications configuration
+# Minecraft Notifications の設定ファイル
+#
+# Copy this file to send-minecraft-notifications.toml and edit it.
+# このファイルを send-minecraft-notifications.toml にコピーして編集してください。
+# Configuration values here are TOML. Strings use TOML quoting and escapes.
+# 設定値はTOML形式です。文字列にはTOMLの引用符・エスケープを使用します。
+
+# Discord webhook URL. Keep this file private after adding your URL.
+# Discord Webhook URL。URLを設定した後は、このファイルを安全に保管してください。
+WEBHOOK_URL = "https://discord.com/api/webhooks/PASTE_YOUR_WEBHOOK_URL_HERE"
+
+# Paths are resolved relative to this configuration file.
+# 相対パスはこの設定ファイルがあるフォルダーを基準にします。
+TARGET_DIR = "./logs/"
+TARGET_FILE = "latest.log"
+
+# Leave PLUGIN_DIR empty when the server does not use plugins.
+# プラグインを使わない場合はPLUGIN_DIRを空にしてください。
+PLUGIN_DIR = "./plugins"
+
+# Plugin/mod logger names to ignore. Keep spaces inside each name as needed.
+# 無視するプラグイン・MOD名。名前に空白がある場合もそのまま記述できます。
+IGNORE_NAMES = ["ChunkTaskScheduler", "ChunkHolderManager", "BE", "Simple_Harvest", "Dynmap", "Nbt Crafting", "STDOUT", "Chunky"]
+
+# Set true when you stop this script whenever you restart the Minecraft server.
+# Minecraftサーバー再起動時にこのスクリプトも停止する場合はtrueにします。
+KILL_AFTER_CLOSED = true
+
+# Server log text that announces a restart. Leave empty to disable.
+# 再起動開始を知らせるサーバーログの文字列。無効にする場合は空にします。
+RESTART_ANNOUNCEMENT_MESSAGE = "Restarting in 60 seconds!"
+
+# Notification templates. TOML \n escapes become line breaks.
+# 通知テンプレート。TOMLの\nエスケープは改行になります。
+SERVER_START_MESSAGE = "==================================>\n:door: **【サーバーがオンラインになりました！】**\n==================================>"
+SERVER_STOP_MESSAGE = "==================================>\n:no_entry_sign: **【サーバーがオフラインになりました。】**\n==================================>"
+SERVER_RESTART_MESSAGE = "==================================>\n:recycle: サーバーの再起動を行っています。これには時間がかかる場合があります。\n==================================>"
+CRASH_MESSAGE = "サーバーが異常終了しました！自動的に再起動します…"
+
+# Enabling embeds overrides the webhook's configured name and avatar.
+# Embedを有効にするとWebhookの名前とアイコン設定が上書きされます。
+EMBED_MODE = false
+SENDER_NAME = "My Minecraft Bot"
+# System icon priority: custom image URL > selected player > built-in icon.
+# システム通知のアイコン優先順位：画像URL > 指定プレイヤー > 内蔵アイコン。
+SENDER_ICON = ""
+SENDER_ICON_PLAYER = ""
+PLAYER_ICON_API = "https://mineskin.eu/helm/"
+
+# Rotating tips. Keep at least one message in this list.
+# 定期表示するお知らせ一覧。少なくとも1件を設定してください。
+TIPS_PREFIX = ":information_source: "
+TIPS_MESSAGES = ["このサーバーはXXXが運営しています！", "建築メンバーを募集中です！", "入れてほしいMODがあったら教えてください！"]
+
+# Show original and Japanese chat text. Conversion uses no external service.
+# チャットに原文と日本語変換を併記します。変換に外部サービスは使いません。
+JAPANIZE_ENABLED = false
+# auto: use a server conversion when present, otherwise local kana conversion.
+# local: always use this script's offline romaji-to-hiragana conversion.
+# server: use only a server conversion present in its log.
+# auto: サーバー変換があれば使用し、なければローカル変換します。
+# local: 常にこのスクリプトのオフライン変換を使います。
+# server: ログにあるサーバー変換だけを使います。
+JAPANIZE_MODE = "auto"
+# Optional exact word/phrase replacements, for example {"maikura" = "マイクラ"}.
+# 任意の単語・フレーズ変換辞書。例：{ "maikura" = "マイクラ" }
+JAPANIZE_DICTIONARY = {}
+# Optional format containing {original} and {japanese} exactly once each.
+# 任意の表示形式。{original}と{japanese}を各1回含めます。
+JAPANIZE_SERVER_FORMAT = ""
+# Only explicitly approved PUBLIC channel names. Do not add private channels.
+# 公開と確認したチャンネル名だけ指定します。私信チャンネルは設定しないでください。
+JAPANIZE_PUBLIC_CHANNELS = []

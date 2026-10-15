@@ -40,24 +40,26 @@ def main() -> None:
 
         assert "--check-config" in run("--help")
         run()
-        config = installed / ".env"
-        assert config.is_file() and not (root / ".env").exists()
+        config = installed / "send-minecraft-notifications.toml"
+        assert config.is_file() and not (installed / ".env").exists()
         text = config.read_text(encoding="utf-8")
-        assert "WEBHOOK_URL=" in text and "TARGET_DIR=" in text
+        assert 'WEBHOOK_URL = "' in text and 'TARGET_DIR = "' in text
         run("--init-config", expected=1)
         assert config.read_text(encoding="utf-8") == text
 
         url = "https://discord.com/api/webhooks/123456789012345678/" + "test-token" * 6
-        config.write_text(f"WEBHOOK_URL={url}\nTARGET_DIR=./logs\n", encoding="utf-8")
+        config.write_text(f'WEBHOOK_URL = "{url}"\nTARGET_DIR = "./logs"\n', encoding="utf-8")
         assert "No notifications were sent" in run("--check-config")
         with config.open("a", encoding="utf-8") as output:
-            output.write('JAPANIZE_ENABLED=true\nJAPANIZE_MODE=local\nJAPANIZE_DICTIONARY=\'{"maikura":"マイクラ"}\'\n')
+            output.write('JAPANIZE_ENABLED = true\nJAPANIZE_MODE = "local"\nJAPANIZE_DICTIONARY = { "maikura" = "マイクラ" }\n')
         assert "No notifications were sent" in run("--check-config")
-        external = root / "custom-config" / ".env"
+        external = root / "custom-config"
+        external.mkdir()
         run("--config", str(external), "--init-config")
-        external.write_text(f"WEBHOOK_URL={url}\n", encoding="utf-8")
+        external_config = external / "send-minecraft-notifications.toml"
+        external_config.write_text(f'WEBHOOK_URL = "{url}"\n', encoding="utf-8")
         assert "No notifications were sent" in run("--config", str(external), "--check-config")
-        custom_translation = external.parent / "translations" / "ja_jp.json"
+        custom_translation = external / "translations" / "ja_jp.json"
         custom_translation.parent.mkdir()
         custom_translation.write_text("[]", encoding="utf-8")
         run("--config", str(external), "--check-config", expected=1)
@@ -77,17 +79,22 @@ def main() -> None:
         original = legacy_config.read_bytes()
         config.unlink()
         detected = run("--check-config")
-        assert "Legacy configuration:" in detected
-        reported_path = detected.split("Legacy configuration:", 1)[1].splitlines()[0].strip()
-        # Windows TEMP can use an 8.3 path while Path.resolve() reports its
-        # long form. Verify file identity rather than its spelling.
-        assert Path(reported_path).samefile(legacy_config), f"Unexpected config path: {reported_path}"
+        assert "Legacy configuration:" in detected or "Migrated legacy configuration:" in detected
+        if "Legacy configuration:" in detected:
+            reported_path = detected.split("Legacy configuration:", 1)[1].splitlines()[0].strip()
+            assert Path(reported_path).samefile(legacy_config), f"Unexpected legacy path: {reported_path}"
         assert "No notifications were sent" in detected
+        migrated_config = legacy / "send-minecraft-notifications.toml"
+        assert migrated_config.is_file()
+        assert migrated_config.parent.samefile(legacy_config.parent)
+        assert legacy_config.read_bytes() == original
+        # An intentionally invalid legacy file must not override the TOML made
+        # during migration. This also checks directory selection on later runs.
+        legacy_config.write_text("WEBHOOK_URL=not-a-webhook\n", encoding="utf-8")
         assert "No notifications were sent" in run("--config", str(legacy), "--check-config")
-        assert legacy_config.read_bytes() == original and not config.exists()
         assert url not in detected
 
-    print("Standalone smoke check passed: help, first run, config persistence, bundled data, validation, legacy settings.")
+    print("Standalone smoke check passed: help, TOML first run, config persistence, bundled data, validation, and legacy .env migration.")
 
 
 if __name__ == "__main__":

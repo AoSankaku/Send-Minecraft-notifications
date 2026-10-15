@@ -15,6 +15,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PRODUCT = "send-minecraft-notifications"
+CONFIG_FILENAME = f"{PRODUCT}.toml"
+CONFIG_TEMPLATE = f"{PRODUCT}.example.toml"
 MAX_WINDOWS_FILENAME_LENGTH = 28
 LOCAL_WINDOWS_EXPORT_DIR = Path(r"C:\Users\abcde\dev\normal-apps\[output-executables]")
 
@@ -189,10 +191,16 @@ def cleanup_previous_windows_executables(
 def validate_archive(path: Path, expected_members: set[str]) -> None:
     with zipfile.ZipFile(path) as archive:
         names = set(archive.namelist())
+        if any(
+            name == CONFIG_FILENAME
+            or name == ".env"
+            or name.startswith(".env")
+            or (name.startswith(f".{CONFIG_FILENAME}.") and name.endswith(".tmp"))
+            for name in names
+        ):
+            raise RuntimeError("A local environment file must never be included in a release.")
         if names != expected_members:
             raise RuntimeError(f"Unexpected files in release archive: {sorted(names)}")
-        if any(name == ".env" or (name.startswith(".env.") and name != ".env.example") for name in names):
-            raise RuntimeError("A local environment file must never be included in a release.")
 
 
 def main() -> None:
@@ -231,7 +239,7 @@ def main() -> None:
     binary = release_dir / binary_name
     shutil.copy2(built_binary, binary)
     archive_path = release_dir / f"{PRODUCT}-{platform_arch}.zip"
-    archive_sources = [binary, ROOT / "README.md", ROOT / "LICENSE", ROOT / ".env.example"]
+    archive_sources = [binary, ROOT / "README.md", ROOT / "LICENSE", ROOT / CONFIG_TEMPLATE]
     if any(not path.is_file() for path in archive_sources):
         missing = [str(path) for path in archive_sources if not path.is_file()]
         raise FileNotFoundError(f"Required release files are missing: {missing}")

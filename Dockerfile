@@ -9,7 +9,7 @@ WORKDIR /app
 
 # pyproject.toml と uv.lock をコピー（依存関係のインストール用）
 COPY pyproject.toml uv.lock ./
-COPY .env.example ./
+COPY send-minecraft-notifications.example.toml ./
 
 COPY translations/ ./translations/
 

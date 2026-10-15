@@ -1,6 +1,8 @@
 from pathlib import Path
 import sys
 
+from utils.config import CONFIG_FILENAME, TEMPLATE_FILENAME, write_private_config
+
 
 def resource_path(relative_path: str) -> Path:
     """Read immutable resources from the source tree or the onefile bundle."""
@@ -13,19 +15,28 @@ def resource_path(relative_path: str) -> Path:
 
 def default_config_path() -> Path:
     if getattr(sys, "frozen", False):
-        return Path(sys.executable).resolve().parent / ".env"
-    return Path.cwd() / ".env"
+        return Path(sys.executable).resolve().parent / CONFIG_FILENAME
+    return Path.cwd() / CONFIG_FILENAME
+
+
+def config_in_directory(directory: Path) -> Path:
+    """Prefer this application's TOML, falling back to an existing old .env."""
+    canonical = directory / CONFIG_FILENAME
+    if canonical.exists() or canonical.is_symlink():
+        return canonical
+    legacy = directory / ".env"
+    return legacy if legacy.is_file() or legacy.is_symlink() else canonical
 
 
 def find_legacy_config() -> Path | None:
     """Find a known Python checkout without scanning unrelated directories."""
     def config_in(directory: Path) -> Path | None:
-        config = directory / ".env"
-        if config.is_file() and all(
+        config = config_in_directory(directory)
+        if config.is_file() and (config.name == CONFIG_FILENAME or all(
             (directory / marker).is_file()
             for marker in ("src/main.py", "src/handlers/secrets.py")
-        ):
-            return config.resolve()
+        )):
+            return config
         return None
 
     # Running from an old checkout explicitly selects that installation.
@@ -57,6 +68,4 @@ def translation_path(config_path: Path) -> Path:
 
 def create_config(config_path: Path) -> None:
     config_path.parent.mkdir(parents=True, exist_ok=True)
-    # Exclusive creation preserves existing secrets and custom settings.
-    with config_path.open("x", encoding="utf-8") as output:
-        output.write(resource_path(".env.example").read_text(encoding="utf-8"))
+    write_private_config(config_path, resource_path(TEMPLATE_FILENAME).read_text(encoding="utf-8"))

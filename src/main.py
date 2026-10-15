@@ -8,7 +8,11 @@ import traceback
 from handlers.secrets import BotEnv
 from message.i18n import I18n
 from server.server import Server
-from utils.runtime import create_config, default_config_path, find_legacy_config, translation_path
+from utils.config import TEMPLATE_FILENAME, migrate_legacy_config
+from utils.runtime import (
+    config_in_directory, create_config, default_config_path, find_legacy_config,
+    resource_path, translation_path,
+)
 
 
 async def main(config_path: Path | None = None) -> int:
@@ -32,16 +36,19 @@ def cli(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Forward Minecraft server logs to Discord via a webhook.")
     parser.add_argument(
         "--config", type=Path,
-        help="Path to .env or an existing configuration directory; standalone builds also detect nearby legacy Python installations",
+        help="Path to a TOML config, old .env, or existing configuration directory; old .env files are migrated automatically",
     )
     mode = parser.add_mutually_exclusive_group()
-    mode.add_argument("--init-config", action="store_true", help="Create an example .env without overwriting existing settings")
+    mode.add_argument("--init-config", action="store_true", help="Create a TOML configuration without overwriting existing settings")
     mode.add_argument("--check-config", action="store_true", help="Validate settings and translations without sending notifications")
     args = parser.parse_args(argv)
     try:
-        config_path = (args.config or default_config_path()).resolve()
+        # Keep the final path component intact so the loader can reject symlinks.
+        config_path = (args.config or default_config_path()).absolute()
         if args.config is not None and config_path.is_dir():
-            config_path = config_path / ".env"
+            config_path = config_in_directory(config_path)
+        elif args.config is None:
+            config_path = config_in_directory(config_path.parent)
         if (
             args.config is None
             and not args.init_config
@@ -51,14 +58,27 @@ def cli(argv: list[str] | None = None) -> int:
             legacy_config = find_legacy_config()
             if legacy_config is not None:
                 config_path = legacy_config
-                print(f"旧Python版の設定を使用します / Legacy configuration: {config_path}")
+                if config_path.suffix.casefold() == ".toml":
+                    print(f"設定ファイルを検出しました / Configuration: {config_path}")
+                else:
+                    print(f"旧Python版の設定を使用します / Legacy configuration: {config_path}")
+        if config_path.is_file() and config_path.suffix.casefold() != ".toml":
+            source = config_path
+            config_path, converted = migrate_legacy_config(source, resource_path(TEMPLATE_FILENAME))
+            if converted:
+                print(f"旧設定を変換しました（元ファイルは保持） / Converted configuration: {config_path}")
+            else:
+                print(f"既存のTOML設定を使用します / Using configuration: {config_path}")
+            if args.init_config:
+                return 0
         if args.init_config or (
             args.config is None
-            and getattr(sys, "frozen", False)
             and not args.check_config
             and not config_path.exists()
             and "WEBHOOK_URL" not in os.environ
         ):
+            if config_path.suffix.casefold() != ".toml":
+                raise ValueError("New configuration files must use a .toml extension; select a TOML path or a directory.")
             create_config(config_path)
             print(f"Created configuration: {config_path}")
             print("WEBHOOK_URL と TARGET_DIR を設定してから、もう一度実行してください。")

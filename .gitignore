@@ -3,6 +3,9 @@ package-lock.json
 node_modules
 test.py
 .env
+.env.*
+send-minecraft-notifications.toml
+.send-minecraft-notifications.toml.*.tmp
 id.txt
 .venv/
 .uv-cache/

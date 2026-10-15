@@ -10,7 +10,7 @@ a = Analysis(
     binaries=[],
     datas=[
         (str(root / "translations"), "translations"),
-        (str(root / ".env.example"), "."),
+        (str(root / "send-minecraft-notifications.example.toml"), "."),
     ],
     hiddenimports=[],
     hookspath=[],

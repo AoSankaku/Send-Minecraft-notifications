@@ -5,9 +5,11 @@ Minecraft サーバーのログを監視し、起動・終了、プレイヤー�
 ## すぐに使う（Python 不要）
 
 1. [Releases](https://github.com/AoSankaku/Send-Minecraft-notifications/releases) から実行ファイルをダウンロードします。Windows x64 は `.exe`、Linux x64 は拡張子のない実行ファイルです。単体ファイルを使う場合、ZIP の展開は不要です。
-2. 実行ファイルを任意のフォルダーに置いて起動します。初回起動時に同じフォルダーへ `.env` の雛形が作られます。
-3. `.env` の `WEBHOOK_URL` に Discord Webhook URL を、`TARGET_DIR` に Minecraft サーバーのログフォルダーを設定します。
+2. 実行ファイルを任意のフォルダーに置いて起動します。この設定形式に対応したビルドでは、初回起動時に同じフォルダーへ `send-minecraft-notifications.toml` の雛形が作られます。
+3. `send-minecraft-notifications.toml` の `WEBHOOK_URL` に Discord Webhook URL を、`TARGET_DIR` に Minecraft サーバーのログフォルダーを設定します。
 4. 実行ファイルを再起動します。
+
+公開済みの `v1.0.0-beta1` までの実行ファイルは従来どおり `.env` を使います。この設定ファイル名変更は、その後のビルドから利用できます。
 
 <!-- smn:install-ja:start -->
 対象リリース: [v1.0.0-beta1](https://github.com/AoSankaku/Send-Minecraft-notifications/releases/tag/v1.0.0-beta1)。Python のインストールや ZIP の展開は不要です。設定を書き込めるフォルダーで実行してください。
@@ -73,35 +75,49 @@ curl.exe -fL -o smn-main-0ff73d1.exe `
 ```
 <!-- smn:install-ja:end -->
 
+### TOML設定の書き方（v1.0.0-beta1 の次のビルド以降）
+
+Minecraftサーバーと同じフォルダーに置く場合、基本設定は次のようになります。Webhook URLは実際の値に置き換えてください。
+
+```toml
+WEBHOOK_URL = "https://discord.com/api/webhooks/..."
+TARGET_DIR = "./logs"
+TARGET_FILE = "latest.log"
+```
+
+文字列は引用符で囲み、ON/OFFは `true` / `false` で書きます。Windowsの絶対パスには `TARGET_DIR = 'C:\Minecraft\logs'` のように一重引用符を使うと、バックスラッシュをそのまま書けます。メッセージで改行したい場合は二重引用符で `"一行目\n二行目"` と書きます。一重引用符内の `\n` は文字のままです。
+
 ### 設定ファイルの場所を指定する（Windows / Linux 共通）
 
 必要に応じて設定ファイルの場所を `--config <path>` で指定できます。`--init-config` は設定雛形を作成し、`--check-config` は設定を検査します。Windows の実行ファイル名は、アプリ名・Git ブランチ・ビルド元コミットから生成されます。上のコマンドには対象リリースの実際のファイル名を使用しています。
 
-`TARGET_DIR` を相対パスで書いた場合は、`.env` ファイルがあるフォルダーからの相対パスとして解決されます。サーバー起動直後に `logs/latest.log` がまだ作られていなくても、ファイルが現れるまで待機します。
+`TARGET_DIR` を相対パスで書いた場合は、`send-minecraft-notifications.toml` があるフォルダーからの相対パスとして解決されます。旧 `.env` を変換した場合も、そのファイルがあったフォルダーを基準にします。サーバー起動直後に `logs/latest.log` がまだ作られていなくても、ファイルが現れるまで待機します。
 
-`.env` には Webhook URL が含まれるため、公開や共有をしないでください。リリース ZIP に含まれるのは `.env.example` のみです。
+`send-minecraft-notifications.toml` には Webhook URL が含まれるため、公開や共有をしないでください。リリース ZIP に含まれるのは `send-minecraft-notifications.example.toml` のみです。
 
-### 旧Python版の自動検出（v1.0.0-beta0 の次のビルド以降）
+### 旧Python版の自動検出（v1.0.0-beta1 の次のビルド以降）
 
-実行ファイルの横に `.env` があれば、その設定をそのまま使います。旧Python版のフォルダーに新しい実行ファイルを置く方法でも引き継げます。
+実行ファイルの横に `send-minecraft-notifications.toml` があればそれを使います。なければ、隣の旧 `.env` を同じフォルダーの `send-minecraft-notifications.toml` に自動変換します。元の `.env` はそのまま残り、以後はTOML設定が優先されます。旧Python版のフォルダーに新しい実行ファイルを置く方法でも引き継げます。
 
-実行ファイルの横に `.env` がない場合、作業フォルダーの旧Python版を優先して検出します。そこに見つからなければ、実行ファイルと同じフォルダー内、またはその親フォルダー内にある `Send-Minecraft-notifications` を確認します。旧版のソースと `.env` が残っているフォルダーが対象です。複数の候補が見つかった場合は自動選択せず、`--config <旧フォルダー>` または `--config <旧.envのパス>` で指定してください。別の場所にある旧版も同じ方法で指定できます。
+実行ファイルの横に設定がない場合、作業フォルダーの旧Python版を優先して検出します。そこに見つからなければ、実行ファイルと同じフォルダー内、またはその親フォルダー内にある `Send-Minecraft-notifications` を確認します。旧版のソースと `.env` が残っているフォルダーが対象です。複数の候補が見つかった場合は自動選択せず、`--config <旧フォルダー>` または `--config <旧.envのパス>` で指定してください。別の場所にある旧版も同じ方法で指定できます。
 
-読み込んだ旧 `.env` の場所は起動時に表示します。旧ファイルのコピーや上書きは行わず、新しく追加された未設定の項目には既定値を使います。明示した `--config` は自動検出より優先されます。`--init-config` を指定した場合は、自動検出せず新しい雛形を作成します。公開済みの `v1.0.0-beta0` では、上のコマンドのように旧 `.env` のファイルパスを指定してください。
+変換時は旧 `.env` を変更せず、同じフォルダーにTOMLを作成します。相対パスや設定値を引き継ぎ、新しく追加された未設定の項目には既定値を使います。明示した `--config` は自動検出より優先され、設定フォルダーまたは旧 `.env` ファイルを指定できます。`--init-config` は新しいTOML雛形を作成します。公開済みの `v1.0.0-beta0` と `v1.0.0-beta1` では、上のバージョン別手順のとおり `.env` を使います。
+
+旧 `.env` の `${NAME}` は、同じファイル内で先に定義された値を参照できます。環境変数による設定の上書きは引き続き利用できますが、その値は変換先のTOMLには保存しません。
 
 ## 通知とメッセージ設定
 
 - ログのチャットを含め、通知から Discord のユーザー、ロール、`@everyone` へのメンションは行われません。
-- `.env` のテンプレートで文字列として書いた `\n` は改行として送信されます。
-- メッセージテンプレートなど、追加の設定項目は `.env.example` を参照してください。使わない任意項目は初期値のままにできます。
+- TOMLの二重引用符で囲んだ文字列に書いた `\n` は設定読込時に改行になります。
+- メッセージテンプレートなど、追加の設定項目は `send-minecraft-notifications.example.toml` を参照してください。使わない任意項目は初期値のままにできます。
 
 ### ローマ字チャットの日本語表示（v1.0.0-beta1 の次のビルド以降）
 
-`.env` に次を追加して再起動すると、Discordへ原文と日本語変換を併記します。既存の設定に追加しなければ無効のままです。
+`send-minecraft-notifications.toml` に次を追加して再起動すると、Discordへ原文と日本語変換を併記します。既存の設定に追加しなければ無効のままです。
 
-```dotenv
-JAPANIZE_ENABLED=true
-JAPANIZE_MODE=auto
+```toml
+JAPANIZE_ENABLED = true
+JAPANIZE_MODE = "auto"
 ```
 
 表示例（プレイヤー名・アイコンはそのまま使用）:
@@ -119,8 +135,8 @@ konnichiha
 
 独自変換はローマ字からひらがなへの変換で、API、翻訳サービス、オンライン辞書へ本文を送りません。一般的なかな漢字変換は行いませんが、任意のローカル辞書で漢字や固有名詞を指定できます。辞書はローマ字の単語または発言全体に一致するものを使います。
 
-```dotenv
-JAPANIZE_DICTIONARY='{"maikura":"マイクラ","ohayou gozaimasu":"おはようございます"}'
+```toml
+JAPANIZE_DICTIONARY = { "maikura" = "マイクラ", "ohayou gozaimasu" = "おはようございます" }
 ```
 
 日本語が含まれる発言、`/` または `$` で始まる発言は独自変換しません。URL、メール、メンション、コード、`minecraft:stone` のようなIDは変換対象から除外します。英単語とローマ字は厳密に判別できないため、変換が不要な発言には `$` を付けてください。原文と変換文の両方でDiscordメンションは禁止し、長文は上限内に分割します。
@@ -129,23 +145,23 @@ Minecraft Java版のバージョン番号やMod APIには依存せず、Vanilla/
 
 LunaChatの既定の1行書式 `原文 (変換文)` と、Tsuki Chatの同一ログレコード内の `原文`＋改行＋`→ 変換文` に対応します。LunaChatでは `displayNormalChatOnConsole: true` と `japanizeDisplayLine: 1` にすると、原文と変換を同じ行から取得できます。別の本文書式には、次のように2つの項目を各1回含むテンプレートを指定できます。テンプレートは正規表現ではありません。
 
-```dotenv
-JAPANIZE_SERVER_FORMAT="{original} => [{japanese}]"
+```toml
+JAPANIZE_SERVER_FORMAT = "{original} => [{japanese}]"
 ```
 
 送信者のない別ログの `[JP] ...` や `→ ...` は、私信や別プレイヤーの変換の可能性があるため推測して結び付けません。その場合、`auto` は元の公開チャットから独自変換します。ゲーム内だけに表示されてログに残らない変換結果も取得できません。サーバー側プラグイン自身の外部通信設定は、このツールの設定とは別です。上流の書式は [LunaChatの設定](https://github.com/ucchyocean/LunaChat/blob/f8bf6e036354a0f04f23059ba6de8da6e9a9fca0/src/main/resources/config.yml) と [Tsuki Chatのログに渡す文字列](https://github.com/Meatwo310/tsuki-chat/blob/460f30b02b4b7a13fc9e396cd5f1adc8e295e8ec/1.20.1/forge/src/main/java/net/meatwo310/tsukichat/util/ChatCustomizer.java#L66) を参照してください。
 
 チャンネル名から公開・非公開は判別できないため、名前付きチャンネルは既定では転送しません。公開と確認したチャンネルだけを明示します。私信の `[Player -> Target] ...` や、許可していない／識別できないチャンネル書式は除外します。
 
-```dotenv
-JAPANIZE_PUBLIC_CHANNELS=["global"]
+```toml
+JAPANIZE_PUBLIC_CHANNELS = ["global"]
 ```
 
 ### システム通知のアイコン
 
 起動・終了、参加・退出、コンソールの発言、定期案内などのシステム・サーバー通知には、既定で自作の情報アイコン [info_icon_dot.png](assets/info_icon_dot.png) を使用します。特定プレイヤーのスキンを初期値には使用しません。画像はこのリポジトリの `main/assets/info_icon_dot.png` の固定Raw URLからDiscordが取得します。
 
-管理者は `.env` で次のように変更できます。優先順位は `SENDER_ICON`、`SENDER_ICON_PLAYER`、既定の情報アイコンの順です。
+管理者はTOML設定で次のように変更できます。優先順位は `SENDER_ICON`、`SENDER_ICON_PLAYER`、既定の情報アイコンの順です。
 
 | 設定 | 使用するアイコン |
 | --- | --- |
@@ -153,7 +169,7 @@ JAPANIZE_PUBLIC_CHANNELS=["global"]
 | `SENDER_ICON="https://example.com/icon.png"` | 指定した画像URL |
 | `SENDER_ICON=""` と `SENDER_ICON_PLAYER="PlayerName"` | 明示指定したMinecraftプレイヤーのアイコン（`PLAYER_ICON_API` を使用） |
 
-既存の `.env` にプレイヤーのスキンURLが設定されている場合、既定の情報アイコンへ切り替えるには `SENDER_ICON` を空欄にしてください。プレイヤー本人のチャットには引き続きそのプレイヤーのアイコンを使用します。設定を変更した後は通知プログラムを再起動してください。
+旧 `.env` にプレイヤーのスキンURLが設定されている場合、既定の情報アイコンへ切り替えるには `SENDER_ICON` を空欄にしてください。プレイヤー本人のチャットには引き続きそのプレイヤーのアイコンを使用します。設定を変更した後は通知プログラムを再起動してください。
 
 開発用の未公開ブランチでは、既定アイコンの画像を `main` に公開するまでRaw URLは利用できません。別の公開画像を使う場合は `SENDER_ICON` にそのURLを設定してください。
 
@@ -165,7 +181,7 @@ JAPANIZE_PUBLIC_CHANNELS=["global"]
 
 開発には Python 3.12 と [uv](https://docs.astral.sh/uv/) を使います。
 
-実行前に `.env.example` を `.env` にコピーし、`WEBHOOK_URL` と `TARGET_DIR` を設定してください。
+実行前に `send-minecraft-notifications.example.toml` を `send-minecraft-notifications.toml` にコピーし、`WEBHOOK_URL` と `TARGET_DIR` を設定してください。
 
 ```sh
 uv sync --frozen
@@ -180,7 +196,7 @@ uv sync --frozen --group build
 uv run python scripts/build_release.py
 ```
 
-生成物は `dist/release/` に作成されます。単体バイナリ、バイナリと README・LICENSE・`.env.example` をまとめた ZIP、SHA-256 チェックサムが入ります。
+生成物は `dist/release/` に作成されます。単体バイナリ、バイナリと README・LICENSE・`send-minecraft-notifications.example.toml` をまとめた ZIP、SHA-256 チェックサムが入ります。
 
 ## GitHub Actions による自動リリース
 
@@ -196,7 +212,7 @@ uv run python scripts/build_release.py
 
 ## English
 
-Download the Windows x64 `.exe` or Linux x64 binary from [Releases](https://github.com/AoSankaku/Send-Minecraft-notifications/releases). The standalone binary does not require Python, and you can run it without extracting a ZIP. On first run it creates a `.env` template beside itself. Set `WEBHOOK_URL` and `TARGET_DIR`, then run it again. Relative `TARGET_DIR` values are resolved from the folder containing `.env`. On Linux, run `chmod +x <binary>` first. The Linux build requires glibc 2.35 or newer. Other operating systems and architectures are not currently supported release targets.
+Download the Windows x64 `.exe` or Linux x64 binary from [Releases](https://github.com/AoSankaku/Send-Minecraft-notifications/releases). The standalone binary does not require Python, and you can run it without extracting a ZIP. Builds after the published `v1.0.0-beta1` create `send-minecraft-notifications.toml` beside the executable on first run. Set `WEBHOOK_URL` and `TARGET_DIR`, then run it again. Relative paths are resolved from the configuration file's folder. On Linux, run `chmod +x <binary>` first. The Linux build requires glibc 2.35 or newer. Other operating systems and architectures are not currently supported release targets.
 
 <!-- smn:install-en:start -->
 Release: [v1.0.0-beta1](https://github.com/AoSankaku/Send-Minecraft-notifications/releases/tag/v1.0.0-beta1). No Python installation or ZIP extraction is required. Run these commands in a writable directory.
@@ -262,21 +278,35 @@ Pass the old `.env` to `--config` to reuse it without modifying it. Relative `TA
 ```
 <!-- smn:install-en:end -->
 
+### Configuration file
+
+Builds after `v1.0.0-beta1` create `send-minecraft-notifications.toml` beside the executable on first run when no settings are found. Set `WEBHOOK_URL` and `TARGET_DIR` in this file. Keep it private because it contains the Discord webhook URL; the release ZIP contains only `send-minecraft-notifications.example.toml`. Pass either a configuration directory or a TOML/legacy `.env` file to `--config`; `--init-config` creates the named TOML file.
+
+For a notifier placed beside the Minecraft server, use the following settings, replacing the webhook URL:
+
+```toml
+WEBHOOK_URL = "https://discord.com/api/webhooks/..."
+TARGET_DIR = "./logs"
+TARGET_FILE = "latest.log"
+```
+
+Quote strings and use `true` / `false` for switches. Single quotes preserve Windows backslashes, for example `TARGET_DIR = 'C:\Minecraft\logs'`. Double-quoted message strings support escapes: `"first\nsecond"` contains a line break; single-quoted `'first\nsecond'` keeps the literal backslash and `n`. Legacy `${NAME}` references can use earlier values from the same `.env` file. Process environment overrides remain supported at runtime and are never saved during migration.
+
 ### Japanese chat (builds after v1.0.0-beta1)
 
-Add these settings to `.env` and restart to show original chat and Japanese text together. Missing settings default to disabled:
+Add these settings to `send-minecraft-notifications.toml` and restart to show original chat and Japanese text together. Missing settings default to disabled:
 
-```dotenv
-JAPANIZE_ENABLED=true
-JAPANIZE_MODE=auto
+```toml
+JAPANIZE_ENABLED = true
+JAPANIZE_MODE = "auto"
 ```
 
 `auto` reuses a Japanese result from the same public-chat record, otherwise converts locally. `local` always converts the original locally; `server` only uses recorded server results. Independent conversion is offline romaji-to-hiragana, without conversion APIs, model downloads, or dictionary services. It does not perform general kana-to-kanji conversion. Optional exact-word or whole-message dictionary entries can supply kanji and proper names:
 
-```dotenv
-JAPANIZE_DICTIONARY='{"maikura":"マイクラ","ohayou gozaimasu":"おはようございます"}'
-JAPANIZE_SERVER_FORMAT=""
-JAPANIZE_PUBLIC_CHANNELS=[]
+```toml
+JAPANIZE_DICTIONARY = { "maikura" = "マイクラ", "ohayou gozaimasu" = "おはようございます" }
+JAPANIZE_SERVER_FORMAT = ""
+JAPANIZE_PUBLIC_CHANNELS = []
 ```
 
 Messages already containing Japanese or beginning with `/` or `$` skip local conversion. URLs, emails, mentions, code, and namespaced IDs remain intact. Romaji cannot always be distinguished from English; prefix a message with `$` to skip conversion. Mentions remain disabled in both lines, and long player messages are split within Discord's limit.
@@ -285,15 +315,15 @@ Common Vanilla/Fabric, Forge/NeoForge, Paper/Spigot async, and old INFO log layo
 
 LunaChat's default single-line `original (Japanese)` and Tsuki Chat's same-record `original` followed by an unprefixed `→ Japanese` continuation are recognized. For LunaChat, enable normal console chat and single-line Japanize display. A custom `JAPANIZE_SERVER_FORMAT` must contain `{original}` and `{japanese}` once each, for example `{original} => [{japanese}]`; it is a literal template. Anonymous separate `[JP]` / arrow records may belong to private messages and are never guessed or forwarded. Results visible only in-game cannot be recovered from logs; `auto` falls back to local conversion. The server plugin's own network settings are independent of this tool.
 
-Named channels are excluded by default because a name does not prove a channel is public. Only list channels you have verified are public, e.g. `JAPANIZE_PUBLIC_CHANNELS=["global"]`. Private-message and unrecognized channel layouts remain excluded.
+Named channels are excluded by default because a name does not prove a channel is public. Only list channels you have verified are public, e.g. `JAPANIZE_PUBLIC_CHANNELS = ["global"]`. Private-message and unrecognized channel layouts remain excluded.
 
 ### Additional configuration
 
-Builds after `v1.0.0-beta0` automatically reuse an existing `.env` beside the executable. If none exists there, they check the working directory for a legacy Python checkout, then check folders named `Send-Minecraft-notifications` inside the executable's directory and its parent. The old source files and `.env` must still be present. If several neighboring checkouts are found, select one with `--config <old-directory>` or `--config <old-.env-path>`. Explicit `--config` takes priority. The selected legacy file's path is printed at startup; its contents are never copied or overwritten. Missing new settings use defaults. `--init-config` creates a new template instead of detecting old settings. For the published `v1.0.0-beta0`, pass the old `.env` file path as shown above.
+Builds after `v1.0.0-beta1` use `send-minecraft-notifications.toml` beside the executable. When an old `.env` is selected or discovered, it is converted to TOML in the same folder and preserved; later runs prefer TOML. If no adjacent settings exist, the tool checks the working directory for a legacy Python checkout, then checks folders named `Send-Minecraft-notifications` inside the executable's directory and its parent. The old source files and `.env` must still be present for this discovery. If several neighboring checkouts are found, select one with `--config <old-directory>` or `--config <old-.env-path>`. Explicit `--config` takes priority. Missing new settings use defaults. `--init-config` creates a new named TOML template instead of detecting another installation. Published `v1.0.0-beta0` and `v1.0.0-beta1` binaries still use `.env` and their versioned instructions above.
 
 System/server notifications use the original [info icon](assets/info_icon_dot.png) from this repository's fixed `main/assets/info_icon_dot.png` Raw URL by default; no player's skin is used as the default. Leave `SENDER_ICON` and `SENDER_ICON_PLAYER` empty or unset to use it. Administrators can set `SENDER_ICON` to a custom image URL, or leave it empty and set `SENDER_ICON_PLAYER` to a Minecraft player name to use that player's icon through `PLAYER_ICON_API`. An explicit image URL takes priority over a player name. Existing icon URLs remain supported; clear the old URL to switch to the default. Player chat continues to use each player's own icon. Restart the notifier after changing settings. The default image must be published to `main` before its Raw URL is available.
 
-For development, install Python 3.12 and uv, copy `.env.example` to `.env`, and set `WEBHOOK_URL` and `TARGET_DIR`. Then run `uv sync --frozen`, `uv run pytest`, and `uv run python src/main.py`. To make a local release build, run `uv sync --frozen --group build` followed by `uv run python scripts/build_release.py` on the target operating system.
+For development, install Python 3.12 and uv, copy `send-minecraft-notifications.example.toml` to `send-minecraft-notifications.toml`, and set `WEBHOOK_URL` and `TARGET_DIR`. Then run `uv sync --frozen`, `uv run pytest`, and `uv run python src/main.py`. To make a local release build, run `uv sync --frozen --group build` followed by `uv run python scripts/build_release.py` on the target operating system.
 
 Pushing a release tag (for example `1.2.3` or `v1.2.3`) runs both platform builds and publishes one GitHub Release containing both binaries, ZIPs, and checksums after tests and asset verification succeed. Tag names must start with an ASCII letter or digit and contain only ASCII letters, digits, `.`, `_`, `/`, `+`, or `-`. The tagged commit must include the release workflow. Each ZIP's README and the release notes include generated Linux and PowerShell installation commands using that release's tag and actual Windows filename. After publication, Actions updates only the managed installation sections of the default branch's README. Older release reruns cannot roll the URLs back. Branch rules must allow this README update; if it fails, the published binaries remain available. Edit `scripts/release_docs.py` to change instructions inside the `smn:install-ja` / `smn:install-en` markers.
 

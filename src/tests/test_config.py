@@ -6,6 +6,7 @@ import pytest
 from handlers.secrets import BotEnv
 from server.server import Server
 from utils.miscutil import normalize_message_newlines
+from utils.config import CONFIG_FILENAME
 
 
 @pytest.fixture(autouse=True)
@@ -89,7 +90,7 @@ def test_tips_preserve_commas_unicode_and_newlines(tmp_path, monkeypatch):
     messages = ["日本語, comma", "一行目\n二行目", r"三行目\n四行目"]
     monkeypatch.setenv("TIPS_MESSAGES", json.dumps(messages, ensure_ascii=False))
     BotEnv.init()
-    assert [normalize_message_newlines(tip) for tip in json.loads(BotEnv.TipsMessages.get())] == [
+    assert json.loads(BotEnv.TipsMessages.get()) == [
         "日本語, comma", "一行目\n二行目", "三行目\n四行目",
     ]
 
@@ -137,3 +138,41 @@ def test_invalid_japanese_settings_report_only_the_setting_name(tmp_path, monkey
     monkeypatch.setenv(name, value)
     with pytest.raises(ValueError, match=name):
         BotEnv.init(tmp_path / ".env")
+
+
+def test_native_toml_escapes_and_types_reach_server_unchanged(tmp_path):
+    config = tmp_path / CONFIG_FILENAME
+    config.write_text(
+        'WEBHOOK_URL = "https://discord.com/api/webhooks/123456789012345678/' + 'test-token' * 6 + '"\n'
+        "TARGET_DIR = 'C:\\new\\logs'\n"
+        "SERVER_START_MESSAGE = 'literal\\n'\n"
+        'SERVER_STOP_MESSAGE = "actual\\nnewline"\n'
+        'TIPS_MESSAGES = ["actual\\nnewline", \'literal\\n\']\n'
+        'IGNORE_NAMES = ["Dynmap", "Name with spaces"]\n'
+        'JAPANIZE_ENABLED = true\n'
+        'JAPANIZE_DICTIONARY = { maikura = "マイクラ" }\n',
+        encoding="utf-8",
+    )
+    # Avoid creating a Windows absolute log directory during initialization.
+    with config.open("a", encoding="utf-8") as output:
+        output.write('PLUGIN_DIR = ""\n')
+    BotEnv.init(config)
+    assert BotEnv.ServerStartMessage.get() == r"literal\n"
+    assert BotEnv.ServerStopMessage.get() == "actual\nnewline"
+    assert "\n" not in BotEnv.TargetDir.get()
+    assert json.loads(BotEnv.OtherIgnoreNames.get()) == ["Dynmap", "Name with spaces"]
+    assert BotEnv.JapanizeEnabled.getBool()
+    assert json.loads(BotEnv.JapanizeDictionary.get()) == {"maikura": "マイクラ"}
+
+    # Server must not apply legacy escape decoding a second time.
+    config.write_text(config.read_text(encoding="utf-8").replace("TARGET_DIR = 'C:\\new\\logs'", 'TARGET_DIR = "./logs"'), encoding="utf-8")
+
+    async def initialize():
+        server = Server()
+        try:
+            server.init(config)
+            assert server.tips_messages == ["actual\nnewline", r"literal\n"]
+        finally:
+            await server.shutdown()
+
+    asyncio.run(initialize())

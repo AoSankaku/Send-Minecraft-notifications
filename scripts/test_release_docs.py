@@ -42,8 +42,10 @@ class DocumentationTests(unittest.TestCase):
         self.assertIn("curl.exe -fL -o", updated)
         self.assertIn("sha256sum --check --ignore-missing", updated)
         self.assertIn("--check-config", updated)
+        self.assertIn("send-minecraft-notifications.toml", updated)
         self.assertIn("--config /path/to/Send-Minecraft-notifications/.env", updated)
-        self.assertIn("--config 'C:\\path\\to\\Send-Minecraft-notifications\\.env'", updated)
+        self.assertIn("The first run creates `send-minecraft-notifications.toml`", updated)
+        self.assertIn("original `.env`", updated)
         self.assertEqual(release_docs.render_readme(updated, TAG, REPOSITORY, EXE), updated)
 
     def test_new_release_replaces_all_previous_managed_urls(self):
@@ -52,6 +54,26 @@ class DocumentationTests(unittest.TestCase):
         self.assertNotIn("v1.0.0-beta0", updated)
         self.assertNotIn("7654321.exe", updated)
         self.assertIn(TAG, updated)
+
+    def test_published_beta1_instructions_keep_legacy_env_behavior(self):
+        rendered = release_docs.render_readme(TEMPLATE, "v1.0.0-beta1", REPOSITORY, EXE)
+        self.assertIn("create a `.env` template", rendered)
+        self.assertIn("generated `.env`", rendered)
+        self.assertNotIn("send-minecraft-notifications.toml", rendered)
+        self.assertIn("releases/download/v1.0.0-beta1/", rendered)
+
+    def test_beta0_instructions_also_keep_legacy_env_behavior(self):
+        rendered = release_docs.installation_section(
+            "v1.0.0-beta0", REPOSITORY, EXE, "en"
+        )
+        self.assertIn("create a `.env` template", rendered)
+        self.assertNotIn("send-minecraft-notifications.toml", rendered)
+
+    def test_release_notes_for_future_release_explain_toml_migration(self):
+        rendered = release_docs.render_notes("## Changes\n", TAG, REPOSITORY, EXE)
+        self.assertIn("send-minecraft-notifications.toml", rendered)
+        self.assertIn("preserves the original `.env`", rendered)
+        self.assertIn("--config /path/to/Send-Minecraft-notifications/.env", rendered)
 
     def test_release_notes_preserve_changelog_and_do_not_duplicate_instructions(self):
         original = "## Changes\n\nRetain the maintainer's notes.\n"
