@@ -24,4 +24,6 @@ Independent review found no concrete issues in triggers, tag behavior, permissio
 
 References: [workflow trigger/path rules](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#onpushpull_requestpull_request_targetpathspaths-ignore), [concurrency queue](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#concurrency).
 
-The updated main-branch CI run will supply the integration evidence for the pre-tag path without creating a release.
+Main-branch push run [38765182746](https://github.com/AoSankaku/Send-Minecraft-notifications/actions/runs/38765182746) completed successfully for exact implementation commit `4844b8465ffa4102ccf6351504c92c09347d317b`. Its publishing check passed all 13 cases before the platform builds. Windows and Linux each passed 545 application tests, built public-mode binaries and passed the standalone smoke check (including UTF-8 initialization and legacy settings migration). The publication job was skipped as intended. No new release was created; the published beta2 release and its timestamp remained unchanged.
+
+Only this verification record changed after that run, so no repeated packaging run was required.
