@@ -19,5 +19,7 @@
     "on_achievements_complete_old": ":military_metal: 挑戦%challenge-name%を達成しました！",
     "on_chat_from_lunachat": "`%player-message%`",
     "player_count_notify": ":information_source: 現在サーバーにいるプレイヤーは %server-count% 人です。みんな待ってるよ:eyes:",
-    "on_shared_waypoint_created": ":round_pushpin: 共有ウェイポイント「%waypoint-name%」を作成しました。%waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)"
+    "on_shared_waypoint_created": ":round_pushpin: 共有ウェイポイント「%waypoint-name%」を作成しました。%waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)",
+    "on_shared_waypoint_updated": ":round_pushpin: 共有ウェイポイント「%waypoint-name%」を更新しました。%waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)",
+    "on_shared_waypoint_deleted": ":round_pushpin: 共有ウェイポイント「%waypoint-name%」を削除しました。%waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)"
 }

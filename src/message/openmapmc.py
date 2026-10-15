@@ -14,7 +14,16 @@ MAX_RECORD_LENGTH = 8192
 _PLAYER = re.compile(r"[.A-Za-z0-9_]{1,32}")
 _DIMENSION = re.compile(r"[a-z0-9_.-]+:[a-z0-9/._-]+")
 _PLACEHOLDER = re.compile(r"%waypoint-(?:name|dimension|x|y|z)%")
-DEFAULT_TEMPLATE = ":round_pushpin: Created shared waypoint [%waypoint-name%] in %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
+_EVENTS = {
+    "shared_waypoint_created": EventIds.ON_SHARED_WAYPOINT_CREATED,
+    "shared_waypoint_updated": EventIds.ON_SHARED_WAYPOINT_UPDATED,
+    "shared_waypoint_deleted": EventIds.ON_SHARED_WAYPOINT_DELETED,
+}
+_DEFAULT_TEMPLATES = {
+    EventIds.ON_SHARED_WAYPOINT_CREATED: ":round_pushpin: Created shared waypoint [%waypoint-name%] in %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    EventIds.ON_SHARED_WAYPOINT_UPDATED: ":round_pushpin: Updated shared waypoint [%waypoint-name%] in %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    EventIds.ON_SHARED_WAYPOINT_DELETED: ":round_pushpin: Deleted shared waypoint [%waypoint-name%] in %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+}
 
 
 def _unique_object(pairs):
@@ -38,20 +47,26 @@ def _number(value):
     return str(int(value)) if value == int(value) else str(value)
 
 
-def parse_waypoint_created(body: str, template: str = DEFAULT_TEMPLATE) -> MessageData | None:
+def parse_waypoint_event(body: str, translator=None) -> MessageData | None:
     if not body.startswith(EVENT_PREFIX) or len(body) > MAX_RECORD_LENGTH:
         return None
     try:
         data = json.loads(body[len(EVENT_PREFIX):], object_pairs_hook=_unique_object)
         if not isinstance(data, dict) or type(data.get("schema_version")) is not int or data["schema_version"] != 1:
             return None
-        if data.get("event") != "shared_waypoint_created":
+        event = data.get("event")
+        if not isinstance(event, str) or event not in _EVENTS:
             return None
         if not _uuid(data.get("waypoint_id")) or not _uuid(data.get("creator_uuid")):
             return None
         creator, name, dimension = data.get("creator_name"), data.get("name"), data.get("dimension")
         if not isinstance(creator, str) or _PLAYER.fullmatch(creator) is None:
             return None
+        actor = creator
+        if event != "shared_waypoint_created":
+            actor = data.get("actor_name")
+            if not _uuid(data.get("actor_uuid")) or not isinstance(actor, str) or _PLAYER.fullmatch(actor) is None:
+                return None
         if not isinstance(name, str) or not name.strip() or len(name) > 256 or len(name.encode("utf-8")) > 1024:
             return None
         if any(ord(char) < 32 or ord(char) == 127 for char in name):
@@ -64,6 +79,10 @@ def parse_waypoint_created(body: str, template: str = DEFAULT_TEMPLATE) -> Messa
             return None
     except (ValueError, UnicodeError, OverflowError, RecursionError):
         return None
+    event_id = _EVENTS[event]
+    template = translator.translate(event_id) if translator else None
+    if template is None:
+        template = _DEFAULT_TEMPLATES[event_id]
     fields = {
         "%waypoint-name%": name, "%waypoint-dimension%": dimension,
         **{f"%waypoint-{key}%": _number(data[key]) for key in ("x", "y", "z")},
@@ -73,6 +92,6 @@ def parse_waypoint_created(body: str, template: str = DEFAULT_TEMPLATE) -> Messa
     if not text.strip():
         return None
     return MessageData(
-        MessageType.Player, "#50C8FF", text, creator,
-        event_id=EventIds.ON_SHARED_WAYPOINT_CREATED, literal_text=True,
+        MessageType.Player, "#50C8FF", text, actor,
+        event_id=event_id, literal_text=True,
     )

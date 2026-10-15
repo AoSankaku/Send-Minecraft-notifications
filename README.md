@@ -177,25 +177,27 @@ TRANSLATION_CACHE_DIR = "./translation-cache"
 
 壊れたJARや不正なリソースは警告し、読み取れる他のMODの処理を続けます。対応するのはJAR内の `.json` / 旧 `.lang` 言語リソースとデータ定義から特定できるメッセージです。外部リソースパックの翻訳、入れ子JAR、コードだけで動的生成される任意の診断ログまで自動翻訳する機能ではありません。設定確認とキャッシュ作成には、通知を送信しない `--check-config` を利用できます。
 
-### OpenMapMCの共有ウェイポイント作成通知
+### OpenMapMCの共有ウェイポイント通知
 
-対応版のOpenMapMC Deltaをサーバーに導入すると、共有ウェイポイントを作成・保存したときの構造化ログからDiscordへ通知できます。作成者の名前・アイコンで、ウェイポイント名、ディメンション、XYZ座標を表示します。通知文は `LANGUAGE` で選択した22言語に対応します。
+対応版のOpenMapMC Deltaをサーバーに導入すると、共有ウェイポイントの作成・編集・削除が保存されたときの構造化ログからDiscordへ通知できます。操作した人の名前・アイコンで、ウェイポイント名、ディメンション、XYZ座標を表示します。編集は変更後、削除は削除直前の保存済み情報を使用します。管理者が他人のウェイポイントを操作した場合も、実際に操作した人の名義で通知します。通知文は `LANGUAGE` で選択した22言語に対応します。
 
 ```toml
 OPENMAPMC_WAYPOINT_NOTIFICATIONS = true
 ```
 
-既定は有効です。不要な場合は `false` にして通知プログラムを再起動してください。ログの監視先は従来と同じ `TARGET_DIR` / `TARGET_FILE` を使用し、`MODS_DIR` の指定は不要です。個人ウェイポイント、既存データの読み込み、編集・削除、作成失敗は作成通知の対象ではありません。
+既定は有効で、この設定が3操作すべてに適用されます。不要な場合は `false` にして通知プログラムを再起動してください。ログの監視先は従来と同じ `TARGET_DIR` / `TARGET_FILE` を使用し、`MODS_DIR` の指定は不要です。個人ウェイポイント、既存データの読み込み、権限拒否や保存失敗は通知の対象ではありません。
 
-OpenMapMC側には、保存成功後だけサーバーINFOへ固定接頭辞 `OPENMAPMC_EVENT ` と次の形式のJSONを1行で出力する機能が必要です。作成ログのない旧版を通知プログラムだけで検知することはできません。
+OpenMapMC側には、保存成功後だけサーバーINFOへ固定接頭辞 `OPENMAPMC_EVENT ` と次の形式のJSONを1行で出力する機能が必要です。対応する操作ログのない旧版を通知プログラムだけで検知することはできません。
 
 ```text
 OPENMAPMC_EVENT {"schema_version":1,"event":"shared_waypoint_created","waypoint_id":"b7a57784-31af-4c35-9953-bd0065a144e3","creator_uuid":"ea16f807-6fa0-4d1a-89cb-7f1dc1125e92","creator_name":"Alice","name":"拠点","dimension":"minecraft:overworld","x":123,"y":64,"z":-456}
 ```
 
-新形式のログだけを読み、チャット内の同じ文字列や別MODのロガーからの出力はイベントとして扱いません。不正なJSON、未対応のスキーマ、作成以外のイベントも転送しません。ログのヘッダーはVanilla/Fabric、Forge/NeoForge、Paper系・旧INFO形式に対応します。共有ウェイポイントが公開する座標をDiscordへ送る機能なので、通知先はサーバーの運用に合わせて設定してください。
+編集・削除では `event` がそれぞれ `shared_waypoint_updated` / `shared_waypoint_deleted` となり、同じ項目に加えて操作した人の `actor_uuid` / `actor_name` が必要です。`creator_uuid` / `creator_name` は引き続き所有者を表します。既存の作成ログ形式もそのまま受け付けます。
 
-通知テンプレートは `on_shared_waypoint_created` キーです。`%waypoint-name%`、`%waypoint-dimension%`、`%waypoint-x%`、`%waypoint-y%`、`%waypoint-z%` を使用できます。名前に含まれるメンション・テンプレートのような文字列は、そのままの文字として扱い、Discordメンションも無効です。
+新形式のログだけを読み、チャット内の同じ文字列や別MODのロガーからの出力はイベントとして扱いません。不正なJSON、未対応のスキーマ・イベントも転送しません。ログのヘッダーはVanilla/Fabric、Forge/NeoForge、Paper系・旧INFO形式に対応します。共有ウェイポイントが公開する座標をDiscordへ送る機能なので、通知先はサーバーの運用に合わせて設定してください。
+
+通知テンプレートは `on_shared_waypoint_created`、`on_shared_waypoint_updated`、`on_shared_waypoint_deleted` キーです。いずれも `%waypoint-name%`、`%waypoint-dimension%`、`%waypoint-x%`、`%waypoint-y%`、`%waypoint-z%` を使用できます。名前に含まれるメンション・テンプレートのような文字列は、そのままの文字として扱い、Discordメンションも無効です。
 
 ### ローマ字チャットの日本語表示（v1.0.0-beta1 の次のビルド以降）
 
@@ -429,13 +431,13 @@ Death templates support positional `%1$s`–`%3$s`, sequential `%s` and literal 
 
 Malformed JARs/resources produce warnings while valid siblings continue. Nested JARs, translations supplied only by external resource packs and arbitrary diagnostics constructed entirely in code are outside this resource-based lookup. `--check-config` also validates the configured folders and prepares the cache without sending notifications.
 
-### OpenMapMC shared waypoint creation
+### OpenMapMC shared waypoint notifications
 
-`OPENMAPMC_WAYPOINT_NOTIFICATIONS = true` (default) forwards supported OpenMapMC Delta server creation events to Discord using the creator's name/avatar, waypoint name, dimension and XYZ coordinates. Set it to `false` and restart to disable. It uses the existing `TARGET_DIR` / `TARGET_FILE`; `MODS_DIR` is not required. The source server MOD must emit the new structured creation log after successful persistence; older versions with no creation log cannot be detected by this notifier alone.
+`OPENMAPMC_WAYPOINT_NOTIFICATIONS = true` (default) forwards supported OpenMapMC Delta shared waypoint creation, editing and deletion events to Discord using the actual actor's name/avatar, waypoint name, dimension and XYZ coordinates. Updates show the saved new state; deletion shows the last saved state. Administrator operations use the administrator's identity even when the waypoint belongs to someone else. Set the switch to `false` and restart to disable all three operations. It uses the existing `TARGET_DIR` / `TARGET_FILE`; `MODS_DIR` is not required. The source server MOD must emit each structured operation log after successful persistence; older versions without the relevant log cannot be detected by this notifier alone.
 
-The contract is a server INFO message beginning `OPENMAPMC_EVENT ` followed by one JSON object: `schema_version: 1`, `event: "shared_waypoint_created"`, UUID strings `waypoint_id` / `creator_uuid`, strings `creator_name` / `name` / `dimension`, and numeric `x` / `y` / `z`. Personal waypoints, startup loading, updates, deletion and failed creation are excluded. Chat, unsigned-chat wrappers, other explicit loggers, malformed records and unsupported schemas/events are never treated as creation notifications.
+The contract is a server INFO message beginning `OPENMAPMC_EVENT ` followed by one JSON object: `schema_version: 1`, `event: "shared_waypoint_created"`, UUID strings `waypoint_id` / `creator_uuid`, strings `creator_name` / `name` / `dimension`, and numeric `x` / `y` / `z`. Editing and deletion use `shared_waypoint_updated` / `shared_waypoint_deleted` and additionally require the actual actor's `actor_uuid` / `actor_name`; the creator fields still identify the owner. Existing creation records remain supported. Personal waypoints, startup loading, denied operations and persistence failures are excluded. Chat, unsigned-chat wrappers, other explicit loggers, malformed records and unsupported schemas/events are never treated as waypoint notifications.
 
-All 22 notification languages include `on_shared_waypoint_created`. Custom templates can use `%waypoint-name%`, `%waypoint-dimension%`, `%waypoint-x%`, `%waypoint-y%` and `%waypoint-z%`. Inserted names remain literal and Discord mentions remain disabled. Use a notification channel appropriate for the shared coordinates.
+All 22 notification languages include `on_shared_waypoint_created`, `on_shared_waypoint_updated` and `on_shared_waypoint_deleted`. Each custom template can use `%waypoint-name%`, `%waypoint-dimension%`, `%waypoint-x%`, `%waypoint-y%` and `%waypoint-z%`. Inserted names remain literal and Discord mentions remain disabled. Use a notification channel appropriate for the shared coordinates.
 
 ### Additional configuration
 

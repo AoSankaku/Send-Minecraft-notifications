@@ -19,5 +19,7 @@
     "on_challenge_complete": ":trophy: a finalizat provocarea [%challenge-name%]!",
     "on_achievements_complete_old": ":military_medal: a obținut realizarea [%challenge-name%]!",
     "player_count_notify": ":information_source: Sunt %server-count% jucători online. Toți te așteaptă :eyes:",
-    "on_shared_waypoint_created": ":round_pushpin: Punctul de reper comun %waypoint-name% a fost creat în dimensiunea %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
+    "on_shared_waypoint_created": ":round_pushpin: Punctul de reper comun %waypoint-name% a fost creat în dimensiunea %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_shared_waypoint_updated": ":round_pushpin: Punctul de reper comun %waypoint-name% a fost actualizat în dimensiunea %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_shared_waypoint_deleted": ":round_pushpin: Punctul de reper comun %waypoint-name% a fost șters din dimensiunea %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
 }

@@ -45,11 +45,12 @@ def line(data=None, header="[12:34:56] [Server thread/INFO] [OpenMapDelta/]: "):
     "[12:34:56 INFO]: ",
     "2026-10-15 12:34:56 [INFO] ",
 ])
-def test_shared_creation_event_extracts_creator_name_location_and_dimension(header):
-    result = LogParser("", "", "", "", []).parse(line(header=header), Templates())
+@pytest.mark.parametrize("operation", OPERATIONS)
+def test_shared_event_extracts_actor_name_location_and_dimension(header, operation):
+    result = LogParser("", "", "", "", []).parse(line(event_data(operation), header=header), Templates())
     assert result is not None
-    assert result.event_id == EVENT
-    assert result.playerId == "Alice"
+    assert result.event_id == f"on_shared_waypoint_{operation}"
+    assert result.playerId == ("Alice" if operation == "created" else "Bob")
     assert result.text == "拠点 | minecraft:overworld | 123, 64, -456"
     assert result.literal_text
 
@@ -81,8 +82,9 @@ def test_malformed_reserved_events_are_dropped(body):
     "[12:34:56] [Async Chat Thread/INFO]: ",
     "[12:34:56] [Server thread/INFO] [SomeOtherMod/]: ",
 ])
-def test_untrusted_event_logger_or_chat_thread_is_not_forwarded(header):
-    assert LogParser("", "", "", "", []).parse(line(header=header), Templates()) is None
+@pytest.mark.parametrize("operation", OPERATIONS)
+def test_untrusted_event_logger_or_chat_thread_is_not_forwarded(header, operation):
+    assert LogParser("", "", "", "", []).parse(line(event_data(operation), header=header), Templates()) is None
 
 
 @pytest.mark.parametrize("operation", OPERATIONS)
@@ -130,7 +132,7 @@ def test_mutations_validate_actor_owner_and_waypoint(operation, change):
 @pytest.mark.parametrize("operation", ("updated", "deleted"))
 def test_mutations_without_actor_do_not_fall_back_to_owner(operation):
     data = DATA | {"event": f"shared_waypoint_{operation}"}
-    assert LogParser("", "", "", []).parse(line(data), Templates()) is None
+    assert LogParser("", "", "", "", []).parse(line(data), Templates()) is None
 
 
 @pytest.mark.parametrize("operation", OPERATIONS)
@@ -150,6 +152,15 @@ def test_default_translation_describes_operation(operation, word):
     assert result is not None
     assert word in result.text
     assert "拠点" in result.text
+
+
+@pytest.mark.parametrize("operation", OPERATIONS)
+def test_empty_custom_translation_disables_that_event(operation):
+    class EmptyTemplate:
+        def translate(self, event):
+            return ""
+
+    assert LogParser("", "", "", "", []).parse(line(event_data(operation)), EmptyTemplate()) is None
 
 
 def test_duplicate_json_keys_are_rejected_even_for_otherwise_valid_event():

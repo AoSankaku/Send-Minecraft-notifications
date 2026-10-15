@@ -19,5 +19,7 @@
     "on_challenge_complete": ":trophy: [%challenge-name%] meydan okumasını tamamladı!",
     "on_achievements_complete_old": ":military_medal: [%challenge-name%] başarısını kazandı!",
     "player_count_notify": ":information_source: %server-count% oyuncu çevrimiçi. Herkes seni bekliyor :eyes:",
-    "on_shared_waypoint_created": ":round_pushpin: %waypoint-dimension% boyutunda %waypoint-name% paylaşılan yol noktası oluşturuldu (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
+    "on_shared_waypoint_created": ":round_pushpin: %waypoint-dimension% boyutunda %waypoint-name% paylaşılan yol noktası oluşturuldu (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_shared_waypoint_updated": ":round_pushpin: %waypoint-dimension% boyutundaki %waypoint-name% paylaşılan yol noktası güncellendi (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_shared_waypoint_deleted": ":round_pushpin: %waypoint-dimension% boyutundaki %waypoint-name% paylaşılan yol noktası silindi (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
 }

@@ -19,5 +19,7 @@
     "on_challenge_complete": ":trophy: ने चुनौती [%challenge-name%] पूरी की!",
     "on_achievements_complete_old": ":military_medal: ने उपलब्धि [%challenge-name%] हासिल की!",
     "player_count_notify": ":information_source: %server-count% खिलाड़ी ऑनलाइन हैं। सभी आपका इंतज़ार कर रहे हैं :eyes:",
-    "on_shared_waypoint_created": ":round_pushpin: साझा वेपॉइंट %waypoint-name% को %waypoint-dimension% में बनाया गया (%waypoint-x%, %waypoint-y%, %waypoint-z%)।"
+    "on_shared_waypoint_created": ":round_pushpin: साझा वेपॉइंट %waypoint-name% को %waypoint-dimension% में बनाया गया (%waypoint-x%, %waypoint-y%, %waypoint-z%)।",
+    "on_shared_waypoint_updated": ":round_pushpin: साझा वेपॉइंट %waypoint-name% को %waypoint-dimension% में अपडेट किया गया (%waypoint-x%, %waypoint-y%, %waypoint-z%)।",
+    "on_shared_waypoint_deleted": ":round_pushpin: साझा वेपॉइंट %waypoint-name% को %waypoint-dimension% से हटाया गया (%waypoint-x%, %waypoint-y%, %waypoint-z%)।"
 }

@@ -19,5 +19,7 @@
     "on_challenge_complete": ":trophy: menyelesaikan tantangan [%challenge-name%]!",
     "on_achievements_complete_old": ":military_medal: memperoleh pencapaian [%challenge-name%]!",
     "player_count_notify": ":information_source: Ada %server-count% pemain online. Semua menunggu :eyes:",
-    "on_shared_waypoint_created": ":round_pushpin: Titik arah bersama %waypoint-name% dibuat di dimensi %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
+    "on_shared_waypoint_created": ":round_pushpin: Titik arah bersama %waypoint-name% dibuat di dimensi %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_shared_waypoint_updated": ":round_pushpin: Titik arah bersama %waypoint-name% diperbarui di dimensi %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_shared_waypoint_deleted": ":round_pushpin: Titik arah bersama %waypoint-name% dihapus dari dimensi %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
 }

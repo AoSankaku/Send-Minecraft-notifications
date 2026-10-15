@@ -19,5 +19,7 @@
     "on_challenge_complete": ":trophy: ha completado el desafío [%challenge-name%].",
     "on_achievements_complete_old": ":military_medal: ha conseguido el logro [%challenge-name%].",
     "player_count_notify": ":information_source: Hay %server-count% jugadores en línea. Todos te esperan :eyes:",
-    "on_shared_waypoint_created": ":round_pushpin: Se creó el punto compartido %waypoint-name% en la dimensión %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
+    "on_shared_waypoint_created": ":round_pushpin: Se creó el punto compartido %waypoint-name% en la dimensión %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_shared_waypoint_updated": ":round_pushpin: Se actualizó el punto compartido %waypoint-name% en la dimensión %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_shared_waypoint_deleted": ":round_pushpin: Se eliminó el punto compartido %waypoint-name% de la dimensión %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
 }

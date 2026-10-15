@@ -19,5 +19,7 @@
     "on_challenge_complete": ":trophy: 完成了挑战 [%challenge-name%]！",
     "on_achievements_complete_old": ":military_medal: 获得了成就 [%challenge-name%]！",
     "player_count_notify": ":information_source: 当前有 %server-count% 名玩家在线。大家都在等你 :eyes:",
-    "on_shared_waypoint_created": ":round_pushpin: 已在 %waypoint-dimension% 创建共享航点 [%waypoint-name%] (%waypoint-x%, %waypoint-y%, %waypoint-z%)。"
+    "on_shared_waypoint_created": ":round_pushpin: 已在 %waypoint-dimension% 创建共享航点 [%waypoint-name%] (%waypoint-x%, %waypoint-y%, %waypoint-z%)。",
+    "on_shared_waypoint_updated": ":round_pushpin: 已更新 %waypoint-dimension% 中的共享航点 [%waypoint-name%] (%waypoint-x%, %waypoint-y%, %waypoint-z%)。",
+    "on_shared_waypoint_deleted": ":round_pushpin: 已从 %waypoint-dimension% 删除共享航点 [%waypoint-name%] (%waypoint-x%, %waypoint-y%, %waypoint-z%)。"
 }

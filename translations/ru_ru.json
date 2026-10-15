@@ -19,5 +19,7 @@
     "on_challenge_complete": ":trophy: выполнил испытание [%challenge-name%]!",
     "on_achievements_complete_old": ":military_medal: получил ачивку [%challenge-name%]!",
     "player_count_notify": ":information_source: В сети %server-count% игроков. Все вас ждут :eyes:",
-    "on_shared_waypoint_created": ":round_pushpin: Создана общая путевая точка %waypoint-name% в измерении %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
+    "on_shared_waypoint_created": ":round_pushpin: Создана общая путевая точка %waypoint-name% в измерении %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_shared_waypoint_updated": ":round_pushpin: Общая путевая точка %waypoint-name% обновлена в измерении %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_shared_waypoint_deleted": ":round_pushpin: Общая путевая точка %waypoint-name% удалена из измерения %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
 }

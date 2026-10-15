@@ -4,7 +4,7 @@ from typing import Callable
 from message.model import MessageData, MessageType
 from message.constant import EventIds
 from message.i18n import I18n
-from message.openmapmc import EVENT_PREFIX, DEFAULT_TEMPLATE, parse_waypoint_created
+from message.openmapmc import EVENT_PREFIX, parse_waypoint_event
 
 forge_primary_prefix = r"^\[.*] \[Server thread/INFO] \[net\.minecraft\.server\.dedicated\.DedicatedServer/]: "
 forge_secondary_prefix = r"^\[.*] \[Server thread/INFO] \[net\.minecraft\.server\.MinecraftServer/]: "
@@ -314,8 +314,7 @@ class LogParser(RegexParser):
                 return None
             if logger is not None and logger.rstrip("/").casefold() != "openmapdelta":
                 return None
-            template = translator.translate(EventIds.ON_SHARED_WAYPOINT_CREATED) if translator else DEFAULT_TEMPLATE
-            return parse_waypoint_created(event_header["body"], DEFAULT_TEMPLATE if template is None else template)
+            return parse_waypoint_event(event_header["body"], translator)
         # An anonymous conversion can belong to a private message. Never infer
         # its sender from the previous public message or forward it on its own.
         if _PRIVATE_CHAT.match(body) or body.startswith(("[JP]", "→ ")):

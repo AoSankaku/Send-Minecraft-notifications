@@ -19,5 +19,7 @@
     "on_challenge_complete": ":trophy: ukończył wyzwanie [%challenge-name%]!",
     "on_achievements_complete_old": ":military_medal: zdobył osiągnięcie [%challenge-name%]!",
     "player_count_notify": ":information_source: Online jest %server-count% graczy. Wszyscy czekają :eyes:",
-    "on_shared_waypoint_created": ":round_pushpin: Utworzono wspólny punkt orientacyjny %waypoint-name% w wymiarze %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
+    "on_shared_waypoint_created": ":round_pushpin: Utworzono wspólny punkt orientacyjny %waypoint-name% w wymiarze %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_shared_waypoint_updated": ":round_pushpin: Zaktualizowano wspólny punkt orientacyjny %waypoint-name% w wymiarze %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_shared_waypoint_deleted": ":round_pushpin: Usunięto wspólny punkt orientacyjny %waypoint-name% z wymiaru %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
 }

@@ -19,5 +19,7 @@
     "on_challenge_complete": ":trophy: đã hoàn thành thử thách [%challenge-name%]!",
     "on_achievements_complete_old": ":military_medal: đã đạt thành tựu [%challenge-name%]!",
     "player_count_notify": ":information_source: Có %server-count% người chơi trực tuyến. Mọi người đang chờ :eyes:",
-    "on_shared_waypoint_created": ":round_pushpin: Đã tạo điểm định vị chung %waypoint-name% trong chiều không gian %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
+    "on_shared_waypoint_created": ":round_pushpin: Đã tạo điểm định vị chung %waypoint-name% trong chiều không gian %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_shared_waypoint_updated": ":round_pushpin: Đã cập nhật điểm định vị chung %waypoint-name% trong chiều không gian %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_shared_waypoint_deleted": ":round_pushpin: Đã xóa điểm định vị chung %waypoint-name% khỏi chiều không gian %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
 }

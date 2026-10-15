@@ -19,5 +19,7 @@
     "on_challenge_complete": ":trophy: 도전 과제 [%challenge-name%]을(를) 완료했습니다!",
     "on_achievements_complete_old": ":military_medal: 업적 [%challenge-name%]을(를) 달성했습니다!",
     "player_count_notify": ":information_source: 현재 %server-count%명이 온라인입니다. 모두 기다리고 있어요 :eyes:",
-    "on_shared_waypoint_created": ":round_pushpin: 공유 웨이포인트 %waypoint-name%을(를) %waypoint-dimension% 차원에 만들었습니다 (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
+    "on_shared_waypoint_created": ":round_pushpin: 공유 웨이포인트 %waypoint-name%을(를) %waypoint-dimension% 차원에 만들었습니다 (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_shared_waypoint_updated": ":round_pushpin: 공유 웨이포인트 %waypoint-name%을(를) %waypoint-dimension% 차원에서 수정했습니다 (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_shared_waypoint_deleted": ":round_pushpin: 공유 웨이포인트 %waypoint-name%을(를) %waypoint-dimension% 차원에서 삭제했습니다 (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
 }

@@ -19,5 +19,7 @@
     "on_challenge_complete": ":trophy: dokončil výzvu [%challenge-name%]!",
     "on_achievements_complete_old": ":military_medal: získal úspěch [%challenge-name%]!",
     "player_count_notify": ":information_source: Online je %server-count% hráčů. Všichni čekají :eyes:",
-    "on_shared_waypoint_created": ":round_pushpin: Byl vytvořen sdílený orientační bod %waypoint-name% v dimenzi %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
+    "on_shared_waypoint_created": ":round_pushpin: Byl vytvořen sdílený orientační bod %waypoint-name% v dimenzi %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_shared_waypoint_updated": ":round_pushpin: Sdílený orientační bod %waypoint-name% byl aktualizován v dimenzi %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_shared_waypoint_deleted": ":round_pushpin: Sdílený orientační bod %waypoint-name% byl odstraněn z dimenze %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
 }

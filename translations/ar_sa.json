@@ -19,5 +19,7 @@
     "on_challenge_complete": ":trophy: أكمل التحدي [%challenge-name%]!",
     "on_achievements_complete_old": ":military_medal: أحرز الإنجاز [%challenge-name%]!",
     "player_count_notify": ":information_source: يوجد %server-count% لاعبًا متصلًا. الجميع بانتظارك :eyes:",
-    "on_shared_waypoint_created": ":round_pushpin: تم إنشاء نقطة مسار مشتركة %waypoint-name% في %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
+    "on_shared_waypoint_created": ":round_pushpin: تم إنشاء نقطة مسار مشتركة %waypoint-name% في %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_shared_waypoint_updated": ":round_pushpin: تم تحديث نقطة المسار المشتركة %waypoint-name% في %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_shared_waypoint_deleted": ":round_pushpin: حُذفت نقطة المسار المشتركة %waypoint-name% من %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
 }
