@@ -2,20 +2,64 @@ name: Build and release
 
 on:
   push:
+    branches: [main]
     tags:
       - "**"
+    paths:
+      - .github/workflows/**
+      - scripts/**
+      - src/**
+      - translations/**
+      - pyproject.toml
+      - uv.lock
+      - .python-version
+      - '*.spec'
+      - send-minecraft-notifications.example.toml
+      - README.md
+      - LICENSE
+  pull_request:
+    paths:
+      - .github/workflows/**
+      - scripts/**
+      - src/**
+      - translations/**
+      - pyproject.toml
+      - uv.lock
+      - .python-version
+      - '*.spec'
+      - send-minecraft-notifications.example.toml
+      - README.md
+      - LICENSE
   workflow_dispatch:
+    inputs:
+      release_version:
+        description: Optional release tag to validate without publishing
+        required: false
+        type: string
 
 concurrency:
   group: standalone-release-${{ github.ref }}
-  cancel-in-progress: false
+  # Keep tag builds; superseded branch/PR checks need not finish.
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
 
 permissions:
   contents: read
 
 jobs:
+  publishing-checks:
+    name: Check release publishing
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Test release publishing without network requests
+        run: python3 scripts/test_publish_release.py
+
   build:
     name: Build (${{ matrix.platform }} x64)
+    needs: publishing-checks
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -28,7 +72,7 @@ jobs:
     permissions:
       contents: read
     env:
-      SMN_RELEASE_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+      SMN_RELEASE_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || inputs.release_version || '' }}
       GH_REPO: ${{ github.repository }}
     steps:
       - name: Check out source
@@ -104,9 +148,6 @@ jobs:
           pattern: release-*-x64
           path: release-assets
           merge-multiple: true
-
-      - name: Test release publishing
-        run: python3 scripts/test_publish_release.py
 
       - name: Verify assets and publish the release
         env:
