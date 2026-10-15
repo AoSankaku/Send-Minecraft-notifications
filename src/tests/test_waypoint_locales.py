@@ -31,7 +31,7 @@ LOCALE_FILES = (
     "zh_hk",
     "zh_tw",
 )
-EVENT_KEY = "on_shared_waypoint_created"
+EVENT_KEYS = ("on_shared_waypoint_created", "on_shared_waypoint_updated", "on_shared_waypoint_deleted")
 REQUIRED_PLACEHOLDERS = {
     "%waypoint-name%",
     "%waypoint-dimension%",
@@ -43,9 +43,10 @@ PLACEHOLDER_PATTERN = re.compile(r"%[A-Za-z0-9_-]+%")
 
 
 @pytest.mark.parametrize("locale_file", LOCALE_FILES)
-def test_shared_waypoint_created_catalog_has_required_placeholders(locale_file):
+@pytest.mark.parametrize("event_key", EVENT_KEYS)
+def test_shared_waypoint_catalog_has_required_placeholders(locale_file, event_key):
     catalog_path = Path(__file__).resolve().parents[2] / "translations" / f"{locale_file}.json"
     catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
 
-    assert EVENT_KEY in catalog, locale_file
-    assert set(PLACEHOLDER_PATTERN.findall(catalog[EVENT_KEY])) == REQUIRED_PLACEHOLDERS, locale_file
+    assert event_key in catalog, locale_file
+    assert set(PLACEHOLDER_PATTERN.findall(catalog[event_key])) == REQUIRED_PLACEHOLDERS, locale_file
