@@ -21,5 +21,8 @@
     "player_count_notify": ":information_source: %server-count% खिलाड़ी ऑनलाइन हैं। सभी आपका इंतज़ार कर रहे हैं :eyes:",
     "on_shared_waypoint_created": ":round_pushpin: साझा वेपॉइंट %waypoint-name% को %waypoint-dimension% में बनाया गया (%waypoint-x%, %waypoint-y%, %waypoint-z%)।",
     "on_shared_waypoint_updated": ":round_pushpin: साझा वेपॉइंट %waypoint-name% को %waypoint-dimension% में अपडेट किया गया (%waypoint-x%, %waypoint-y%, %waypoint-z%)।",
-    "on_shared_waypoint_deleted": ":round_pushpin: साझा वेपॉइंट %waypoint-name% को %waypoint-dimension% से हटाया गया (%waypoint-x%, %waypoint-y%, %waypoint-z%)।"
+    "on_shared_waypoint_deleted": ":round_pushpin: साझा वेपॉइंट %waypoint-name% को %waypoint-dimension% से हटाया गया (%waypoint-x%, %waypoint-y%, %waypoint-z%)।",
+    "on_server_crash": ":rotating_light: The server crashed and terminated unexpectedly.",
+    "on_crash_report_uploaded": ":link: Crash report: %crash-url%",
+    "on_crash_report_failed": ":warning: Could not upload the crash report to mclo.gs."
 }

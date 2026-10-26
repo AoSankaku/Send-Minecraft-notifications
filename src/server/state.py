@@ -5,3 +5,4 @@ class ServerState(Enum):
     STARTED = auto()
     STOPPED = auto()
     RESTARTING = auto()
+    CRASHED = auto()

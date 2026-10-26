@@ -21,5 +21,8 @@
     "player_count_notify": ":information_source: يوجد %server-count% لاعبًا متصلًا. الجميع بانتظارك :eyes:",
     "on_shared_waypoint_created": ":round_pushpin: تم إنشاء نقطة مسار مشتركة %waypoint-name% في %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
     "on_shared_waypoint_updated": ":round_pushpin: تم تحديث نقطة المسار المشتركة %waypoint-name% في %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
-    "on_shared_waypoint_deleted": ":round_pushpin: حُذفت نقطة المسار المشتركة %waypoint-name% من %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
+    "on_shared_waypoint_deleted": ":round_pushpin: حُذفت نقطة المسار المشتركة %waypoint-name% من %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_server_crash": ":rotating_light: The server crashed and terminated unexpectedly.",
+    "on_crash_report_uploaded": ":link: Crash report: %crash-url%",
+    "on_crash_report_failed": ":warning: Could not upload the crash report to mclo.gs."
 }

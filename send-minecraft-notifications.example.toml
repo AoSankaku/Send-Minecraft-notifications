@@ -14,6 +14,24 @@ WEBHOOK_URL = "https://discord.com/api/webhooks/PASTE_YOUR_WEBHOOK_URL_HERE"
 # 相対パスはこの設定ファイルがあるフォルダーを基準にします。
 TARGET_DIR = "./logs/"
 TARGET_FILE = "latest.log"
+# Empty uses TargetDir's parent/crash-reports. A relative path is based on this config file.
+# 空欄ではTargetDirの親/crash-reportsを使用します。相対パスは設定ファイル基準です。
+CRASH_REPORTS_DIR = ""
+
+# Send a localized abnormal-termination notice. Report uploads are disabled unless opted in.
+# 異常終了を通知します。レポートのアップロードは明示的に有効化するまで無効です。
+CRASH_DETECTION_ENABLED = true
+CRASH_REPORT_UPLOAD_ENABLED = false
+# Choose main, admin, or both. Upload details are routed independently from the alert.
+# main、admin、または両方を指定します。アップロード結果の送信先は通知先と別に設定できます。
+CRASH_ALERT_TARGETS = ["main"]
+CRASH_REPORT_TARGETS = ["main"]
+# Optional Discord webhook used by admin destinations. Keep it private.
+# admin宛て通知に使う任意のDiscord Webhookです。安全に保管してください。
+ADMIN_WEBHOOK_URL = ""
+# Optional Minecraft server process ID; zero disables process monitoring.
+# 任意のMinecraftサーバーPID。0ではプロセス監視を無効にします。
+SERVER_PID = 0
 
 # Leave PLUGIN_DIR empty when the server does not use plugins.
 # プラグインを使わない場合はPLUGIN_DIRを空にしてください。
@@ -36,7 +54,9 @@ RESTART_ANNOUNCEMENT_MESSAGE = "Restarting in 60 seconds!"
 SERVER_START_MESSAGE = "==================================>\n:door: **【サーバーがオンラインになりました！】**\n==================================>"
 SERVER_STOP_MESSAGE = "==================================>\n:no_entry_sign: **【サーバーがオフラインになりました。】**\n==================================>"
 SERVER_RESTART_MESSAGE = "==================================>\n:recycle: サーバーの再起動を行っています。これには時間がかかる場合があります。\n==================================>"
-CRASH_MESSAGE = "サーバーが異常終了しました！自動的に再起動します…"
+# Optional crash alert override. Empty uses the localized crash notice above.
+# 任意の異常終了通知文。空欄ではLANGUAGEに応じた通知を使用します。
+CRASH_MESSAGE = ""
 
 # Enabling embeds overrides the webhook's configured name and avatar.
 # Embedを有効にするとWebhookの名前とアイコン設定が上書きされます。

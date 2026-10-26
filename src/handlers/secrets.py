@@ -18,6 +18,24 @@ def _is_bool_str(s: str) -> bool:
     return _lower == "true" or _lower == "false"
 
 
+def _is_valid_discord_webhook(value: str, *, allow_query_fragment: bool = True) -> bool:
+    try:
+        url = urlsplit(value)
+    except ValueError:
+        return False
+    return (
+        url.scheme == "https"
+        and url.netloc in (
+            "discord.com", "discordapp.com", "ptb.discord.com", "canary.discord.com",
+            "ptb.discordapp.com", "canary.discordapp.com",
+        )
+        and url.username is None
+        and url.password is None
+        and (allow_query_fragment or (not url.query and not url.fragment))
+        and re.fullmatch(r"/api/webhooks/[0-9]{17,20}/[A-Za-z0-9._-]{60,}", url.path)
+    )
+
+
 _env_data: dict[str, str] = {}
 
 
@@ -46,20 +64,15 @@ def _loadEnvWithValidate(name: Self, values: dict[str, str | None]):
 def _validate_env(name: Self, value: str) -> str | None:
     match name:
         case BotEnv.WebhookUrl:
-            try:
-                url = urlsplit(value)
-            except ValueError:
+            if not _is_valid_discord_webhook(value):
                 return None
-            if (
-                url.scheme != "https"
-                or url.netloc not in (
-                    "discord.com", "discordapp.com", "ptb.discord.com", "canary.discord.com",
-                    "ptb.discordapp.com", "canary.discordapp.com",
-                )
-                or not re.fullmatch(r"/api/webhooks/[0-9]{17,20}/[A-Za-z0-9._-]{60,}", url.path)
-            ):
+        case BotEnv.AdminWebhookUrl:
+            if value and not _is_valid_discord_webhook(value):
                 return None
         case BotEnv.KillAfterClosed | BotEnv.JapanizeEnabled | BotEnv.AdvancementTranslationEnabled | BotEnv.OpenMapMcWaypoints:
+            if not _is_bool_str(value):
+                return None
+        case BotEnv.CrashDetectionEnabled | BotEnv.CrashReportUploadEnabled:
             if not _is_bool_str(value):
                 return None
         case BotEnv.EmbedMode:
@@ -79,6 +92,23 @@ def _validate_env(name: Self, value: str) -> str | None:
                 return None
         case BotEnv.TranslationCacheDir:
             if not value.strip():
+                return None
+        case BotEnv.CrashReportsDir:
+            if "\x00" in value:
+                return None
+        case BotEnv.CrashAlertTargets | BotEnv.CrashReportTargets:
+            try:
+                targets = json.loads(value)
+            except (ValueError, TypeError):
+                return None
+            if (
+                not isinstance(targets, list)
+                or not targets
+                or len(targets) > 2
+                or not all(isinstance(target, str) for target in targets)
+                or len(set(targets)) != len(targets)
+                or any(target not in {"main", "admin"} for target in targets)
+            ):
                 return None
         case BotEnv.JapanizeDictionary:
             try:
@@ -170,6 +200,16 @@ class BotEnv(StrEnum):
     TranslationCacheDir = "TRANSLATION_CACHE_DIR"
     OpenMapMcWaypoints = "OPENMAPMC_WAYPOINT_NOTIFICATIONS"
 
+    # Crash detection, report uploads and optional process monitoring.
+    CrashDetectionEnabled = "CRASH_DETECTION_ENABLED"
+    CrashReportUploadEnabled = "CRASH_REPORT_UPLOAD_ENABLED"
+    CrashReportsDir = "CRASH_REPORTS_DIR"
+    CrashAlertTargets = "CRASH_ALERT_TARGETS"
+    CrashReportTargets = "CRASH_REPORT_TARGETS"
+    AdminWebhookUrl = "ADMIN_WEBHOOK_URL"
+    CrashMessage = "CRASH_MESSAGE"
+    ServerPid = "SERVER_PID"
+
     @staticmethod
     def init(env_path: str | Path | None = None):
         config_path = Path(env_path).absolute() if env_path is not None else default_config_path()
@@ -186,6 +226,21 @@ class BotEnv(StrEnum):
                 _env_data[name.value] = str(configured.absolute() if name in (
                     BotEnv.ModsDir, BotEnv.TranslationCacheDir,
                 ) else configured.resolve())
+
+        admin_required = any(
+            "admin" in json.loads(setting.get())
+            for setting in (BotEnv.CrashAlertTargets, BotEnv.CrashReportTargets)
+        )
+        if admin_required and not BotEnv.AdminWebhookUrl.get():
+            raise ValueError(
+                f"Invalid setting {BotEnv.CrashAlertTargets.value}/{BotEnv.CrashReportTargets.value} "
+                f"in {config_path}: admin requires ADMIN_WEBHOOK_URL"
+            )
+        if BotEnv.CrashReportUploadEnabled.getBool() and not BotEnv.CrashDetectionEnabled.getBool():
+            raise ValueError(
+                f"Invalid setting {BotEnv.CrashReportUploadEnabled.value} in {config_path}: "
+                "CRASH_DETECTION_ENABLED must also be true"
+            )
 
     def getBool(self) -> bool:
         _s = _env_data[self.value]

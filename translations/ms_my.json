@@ -21,5 +21,8 @@
     "player_count_notify": ":information_source: %server-count% pemain dalam talian. Semua sedang menunggu :eyes:",
     "on_shared_waypoint_created": ":round_pushpin: Titik laluan kongsi %waypoint-name% dicipta dalam dimensi %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
     "on_shared_waypoint_updated": ":round_pushpin: Titik laluan kongsi %waypoint-name% dikemas kini dalam dimensi %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
-    "on_shared_waypoint_deleted": ":round_pushpin: Titik laluan kongsi %waypoint-name% dipadamkan daripada dimensi %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
+    "on_shared_waypoint_deleted": ":round_pushpin: Titik laluan kongsi %waypoint-name% dipadamkan daripada dimensi %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_server_crash": ":rotating_light: The server crashed and terminated unexpectedly.",
+    "on_crash_report_uploaded": ":link: Crash report: %crash-url%",
+    "on_crash_report_failed": ":warning: Could not upload the crash report to mclo.gs."
 }

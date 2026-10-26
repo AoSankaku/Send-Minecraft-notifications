@@ -21,5 +21,8 @@
     "player_count_notify": ":information_source: 目前有 %server-count% 名玩家在線，大家都在等你 :eyes:",
     "on_shared_waypoint_created": ":round_pushpin: 已在 %waypoint-dimension% 建立共享路點 [%waypoint-name%] (%waypoint-x%, %waypoint-y%, %waypoint-z%)。",
     "on_shared_waypoint_updated": ":round_pushpin: 已更新 %waypoint-dimension% 中的共享路點 [%waypoint-name%] (%waypoint-x%, %waypoint-y%, %waypoint-z%)。",
-    "on_shared_waypoint_deleted": ":round_pushpin: 已從 %waypoint-dimension% 刪除共享路點 [%waypoint-name%] (%waypoint-x%, %waypoint-y%, %waypoint-z%)。"
+    "on_shared_waypoint_deleted": ":round_pushpin: 已從 %waypoint-dimension% 刪除共享路點 [%waypoint-name%] (%waypoint-x%, %waypoint-y%, %waypoint-z%)。",
+    "on_server_crash": ":rotating_light: The server crashed and terminated unexpectedly.",
+    "on_crash_report_uploaded": ":link: Crash report: %crash-url%",
+    "on_crash_report_failed": ":warning: Could not upload the crash report to mclo.gs."
 }

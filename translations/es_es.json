@@ -21,5 +21,8 @@
     "player_count_notify": ":information_source: Hay %server-count% jugadores en línea. Todos te esperan :eyes:",
     "on_shared_waypoint_created": ":round_pushpin: Se creó el punto compartido %waypoint-name% en la dimensión %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
     "on_shared_waypoint_updated": ":round_pushpin: Se actualizó el punto compartido %waypoint-name% en la dimensión %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
-    "on_shared_waypoint_deleted": ":round_pushpin: Se eliminó el punto compartido %waypoint-name% de la dimensión %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%)."
+    "on_shared_waypoint_deleted": ":round_pushpin: Se eliminó el punto compartido %waypoint-name% de la dimensión %waypoint-dimension% (%waypoint-x%, %waypoint-y%, %waypoint-z%).",
+    "on_server_crash": ":rotating_light: The server crashed and terminated unexpectedly.",
+    "on_crash_report_uploaded": ":link: Crash report: %crash-url%",
+    "on_crash_report_failed": ":warning: Could not upload the crash report to mclo.gs."
 }

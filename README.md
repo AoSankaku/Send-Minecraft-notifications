@@ -113,6 +113,31 @@ TARGET_FILE = "latest.log"
 - TOMLの二重引用符で囲んだ文字列に書いた `\n` は設定読込時に改行になります。
 - メッセージテンプレートなど、追加の設定項目は `send-minecraft-notifications.example.toml` を参照してください。使わない任意項目は初期値のままにできます。
 
+### サーバークラッシュの検知とレポート共有
+
+サーバーの致命的なログと、新しく生成されたサーバー用クラッシュレポートを検知し、異常終了を通知します。検知は既定で有効です。クラッシュに続く停止ログで正常終了の通知を重ねず、同じ障害の複数の手掛かりをまとめます。通常のERRORログ、プレイヤーチャット、クライアント用の `*-client.txt`、通知プログラム起動前からあるレポートは対象にしません。
+
+クラッシュレポートを [mclo.gs](https://mclo.gs/) に自動アップロードし、リンクを通常チャンネルと管理者チャンネルの両方へ送る例です。管理者チャンネル側で作成したWebhookを `ADMIN_WEBHOOK_URL` に設定してください。
+
+```toml
+CRASH_DETECTION_ENABLED = true
+CRASH_REPORT_UPLOAD_ENABLED = true
+ADMIN_WEBHOOK_URL = "https://discord.com/api/webhooks/管理者チャンネルのWebhook"
+CRASH_ALERT_TARGETS = ["main", "admin"]
+CRASH_REPORT_TARGETS = ["main", "admin"]
+CRASH_REPORTS_DIR = ""
+SERVER_PID = 0
+CRASH_MESSAGE = ""
+```
+
+`main` は既存の `WEBHOOK_URL`、`admin` は `ADMIN_WEBHOOK_URL` です。たとえば `CRASH_ALERT_TARGETS = ["main"]`、`CRASH_REPORT_TARGETS = ["admin"]` にすると、異常終了のお知らせを通常チャンネルへ、詳細リンクを管理者だけへ送れます。同じWebhookを両方に設定しても重複送信しません。管理者宛てを選んだ場合は、有効な管理者Webhookが必要です。
+
+`CRASH_REPORTS_DIR` が空欄なら `TARGET_DIR` の隣の `crash-reports` を使います。明示した相対パスは設定ファイル基準です。生成中のレポートは書き込みが落ち着くまで待ち、レポートが得られない異常終了では直近ログの末尾を共有します。アップロードに失敗しても異常終了の通知と監視を続けます。
+
+ログもレポートも残らない強制終了を検知するには、`SERVER_PID` に監視するMinecraft JavaプロセスのPIDを整数で設定します。`0` はPID監視を無効にします。正常な停止ログを検知した後の終了は異常扱いしません。Javaプロセスの再作成後は新しいPIDに設定し直し、通知プログラムも再起動してください。ログに動きがないだけでは異常終了と判定しません。
+
+外部への自動アップロードは既定では無効です。有効化するとログ内容を公開共有サービスへ送信します。既知のWebhookやトークン、IPアドレス、ホームディレクトリ名などを送信前に伏せますが、任意のMODが出力する個人情報をすべて除去する保証はありません。共有先チャンネルも含めて用途に合う設定を選んでください。`CRASH_MESSAGE` が空欄なら選択した通知言語を使い、文章を指定した場合はそれを使用します。このプログラム自体はMinecraftサーバーを再起動しません。
+
 ### 進捗・実績の翻訳と通知言語（v1.0.0-beta1 の次のビルド以降）
 
 進捗・目標・挑戦・旧実績の名前を、Minecraftの言語データを使ってオフラインで翻訳します。既定は日本語です。Minecraft本体の解析、サーバーへのMod追加、外部翻訳APIは不要です。通知文も選択した言語になります。
@@ -430,6 +455,31 @@ Language JSON/legacy `.lang` files and advancement definitions identify mod adva
 Death templates support positional `%1$s`–`%3$s`, sequential `%s` and literal `%%`, retaining player/attacker/custom item names as literal values. Missing translations, conflicting interpretations or incompatible argument sets preserve the original. Exact `ADVANCEMENT_DICTIONARY` overrides take priority for mod titles too. Create's official resource data was checked for the “Wheels of Destruction” advancement and Crushing Wheels death message; this is resource verification, not a game/runtime test matrix.
 
 Malformed JARs/resources produce warnings while valid siblings continue. Nested JARs, translations supplied only by external resource packs and arbitrary diagnostics constructed entirely in code are outside this resource-based lookup. `--check-config` also validates the configured folders and prepares the cache without sending notifications.
+
+### Server crash detection and report sharing
+
+Crash detection is enabled by default. It watches definitive server crash records and newly generated server crash reports, coalesces signals for the same incident, and avoids a misleading normal-stop notification after a crash. Generic errors, player chat, client-only `*-client.txt` reports and reports that predate notifier startup are excluded.
+
+To enable automatic uploads to [mclo.gs](https://mclo.gs/) and send notifications and report links to both channels:
+
+```toml
+CRASH_DETECTION_ENABLED = true
+CRASH_REPORT_UPLOAD_ENABLED = true
+ADMIN_WEBHOOK_URL = "https://discord.com/api/webhooks/PASTE_ADMIN_WEBHOOK_HERE"
+CRASH_ALERT_TARGETS = ["main", "admin"]
+CRASH_REPORT_TARGETS = ["main", "admin"]
+CRASH_REPORTS_DIR = ""
+SERVER_PID = 0
+CRASH_MESSAGE = ""
+```
+
+`main` uses the existing `WEBHOOK_URL`; `admin` uses a separate webhook created in the administrator channel. Configure alert and report destinations independently: for example, `["main"]` for alerts and `["admin"]` for detailed report links. Identical webhook URLs receive only one copy. Selecting `admin` requires a valid administrator webhook.
+
+An empty `CRASH_REPORTS_DIR` selects the `crash-reports` directory beside `TARGET_DIR`; explicit relative paths are based on the configuration file. Reports are allowed to finish writing before sharing. When no report is available after a crash, a bounded tail of the current log is shared instead. Upload failures do not suppress the crash alert or stop monitoring.
+
+Set `SERVER_PID` to the Minecraft Java process ID to detect termination that leaves no crash log or report. The default `0` disables process monitoring. Exits after a normal stop record are excluded. After recreating the Java process, update the PID and restart the notifier. Log inactivity alone never indicates a crash.
+
+Uploads are disabled by default. Enabling them sends log contents to a public sharing service. Known webhook credentials, tokens, IP addresses and home-directory identifiers are redacted first, but arbitrary mod output may contain other personal information. Choose both upload and channel settings accordingly. An empty `CRASH_MESSAGE` uses the selected notification language; a nonempty value overrides it. This notifier does not restart Minecraft itself.
 
 ### OpenMapMC shared waypoint notifications
 

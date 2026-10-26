@@ -10,6 +10,9 @@ class EventIds(StrEnum):
     ON_SERVER_START = "on_server_start"
     ON_SERVER_STOP = "on_server_stop"
     ON_SERVER_RESTART = "on_server_restart"
+    ON_SERVER_CRASH = "on_server_crash"
+    ON_CRASH_REPORT_UPLOADED = "on_crash_report_uploaded"
+    ON_CRASH_REPORT_FAILED = "on_crash_report_failed"
     
     ON_CONSOLE_CHAT = "on_console_chat"
     ON_SECURE_CHAT = "on_secure_chat"

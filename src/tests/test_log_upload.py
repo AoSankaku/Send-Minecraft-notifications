@@ -143,6 +143,36 @@ def test_non_json_api_response_is_a_safe_upload_failure(tmp_path, monkeypatch):
     asyncio.run(exercise())
 
 
+def test_builtin_scrubber_redacts_common_json_password_bearer_ipv6_and_home_paths():
+    log_upload = load_log_upload_module()
+    content = (
+        '{"token":"json-token-value","password":"secret-value",'
+        '"accessToken":"session-access-value"}\n'
+        '"Authorization": "Bearer json-bearer-value-987654321"\n'
+        "Authorization: Bearer bearer-value-987654321\n"
+        "--accessToken cli-access-value\n"
+        "--password=cli-equal-password-value\n"
+        "password=bare-password-value api_key=bare-api-key-value session=bare-session-value\n"
+        "IPv6 address 2001:db8::cafe\n"
+        "IPv4-mapped IPv6 ::ffff:203.0.113.42\n"
+        "POSIX home /home/alice/.minecraft/crash-reports/crash-server.txt\n"
+        "macOS home /Users/alice/Library/Application Support/Minecraft\n"
+        r"Windows home D:\Users\alice\AppData\Roaming\.minecraft" + "\n"
+    )
+
+    scrubbed = log_upload.sanitize_crash_log(content)
+
+    for private_value in (
+        "json-token-value", "secret-value", "session-access-value",
+        "bearer-value-987654321", "2001:db8::cafe", "/home/alice",
+        "json-bearer-value-987654321", "cli-access-value", "bare-password-value",
+        "cli-equal-password-value",
+        "bare-api-key-value", "bare-session-value", "::ffff:203.0.113.42",
+        "203.0.113.42", "/Users/alice", r"D:\Users\alice",
+    ):
+        assert private_value not in scrubbed
+
+
 def test_upload_never_redirects_and_passes_strict_request_timeout(tmp_path, monkeypatch):
     result, session, uploader = run_upload(
         tmp_path,
@@ -165,4 +195,15 @@ def test_upload_content_is_limited_to_both_service_size_and_line_bounds():
     assert len(sanitized.encode("utf-8")) <= MAX_UPLOAD_BYTES
     many_lines = "\n".join(f"line {index}" for index in range(MAX_UPLOAD_LINES + 10))
     assert len(log_upload.sanitize_crash_log(many_lines).splitlines()) <= MAX_UPLOAD_LINES
+    japanese = "障" * (MAX_UPLOAD_BYTES // 2 + 100)
+    assert len(log_upload.sanitize_crash_log(japanese).encode("utf-8")) <= MAX_UPLOAD_BYTES
+
+
+def test_configured_discord_webhook_token_is_redacted_even_without_assignment_label():
+    log_upload = load_log_upload_module()
+    configured_token = WEBHOOK.rsplit("/", 1)[-1]
+    scrubbed = log_upload.sanitize_crash_log(
+        f"remote error contained {configured_token}", secrets=(configured_token,)
+    )
+    assert configured_token not in scrubbed
 

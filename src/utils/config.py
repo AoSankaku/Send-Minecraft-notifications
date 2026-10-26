@@ -5,6 +5,7 @@ from __future__ import annotations
 import io
 import json
 import os
+import re
 import tempfile
 import tomllib
 from collections.abc import Mapping
@@ -25,13 +26,19 @@ _BOOL_KEYS = {
     "KILL_AFTER_CLOSED", "EMBED_MODE", "JAPANIZE_ENABLED",
     "ADVANCEMENT_TRANSLATION_ENABLED",
     "OPENMAPMC_WAYPOINT_NOTIFICATIONS",
+    "CRASH_DETECTION_ENABLED", "CRASH_REPORT_UPLOAD_ENABLED",
 }
-_ARRAY_KEYS = {"IGNORE_NAMES", "TIPS_MESSAGES", "JAPANIZE_PUBLIC_CHANNELS"}
+_ARRAY_KEYS = {
+    "IGNORE_NAMES", "TIPS_MESSAGES", "JAPANIZE_PUBLIC_CHANNELS",
+    "CRASH_ALERT_TARGETS", "CRASH_REPORT_TARGETS",
+}
+_INT_KEYS = {"SERVER_PID"}
 _DICT_KEYS = {"JAPANIZE_DICTIONARY", "ADVANCEMENT_DICTIONARY"}
 _MESSAGE_KEYS = {
     "SERVER_START_MESSAGE",
     "SERVER_STOP_MESSAGE",
     "SERVER_RESTART_MESSAGE",
+    "CRASH_MESSAGE",
     "TIPS_PREFIX",
     "JAPANIZE_SERVER_FORMAT",
 }
@@ -82,6 +89,14 @@ def _legacy_native_value(key: str, value: str, path: Path) -> Any:
             raise _fail(path, key) from None
         return lowered == "true"
 
+    if key in _INT_KEYS:
+        if not re.fullmatch(r"(?:0|[1-9][0-9]*)", value.strip()):
+            raise _fail(path, key)
+        parsed = int(value)
+        if parsed > 2**31 - 1:
+            raise _fail(path, key)
+        return parsed
+
     if key in _ARRAY_KEYS:
         if key == "IGNORE_NAMES":
             try:
@@ -118,6 +133,9 @@ def _validate_native_value(key: str, value: Any, path: Path) -> Any:
     if key in _BOOL_KEYS:
         if not isinstance(value, bool):
             raise _fail(path, key) from None
+    elif key in _INT_KEYS:
+        if type(value) is not int or value < 0 or value > 2**31 - 1:
+            raise _fail(path, key) from None
     elif key in _ARRAY_KEYS:
         if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
             raise _fail(path, key) from None
@@ -140,6 +158,8 @@ def _convert_native(values: Mapping[str, Any], path: Path, known_keys: set[str])
         _validate_native_value(key, value, path)
         if isinstance(value, bool):
             converted[key] = "true" if value else "false"
+        elif key in _INT_KEYS:
+            converted[key] = str(value)
         elif isinstance(value, (list, dict)):
             converted[key] = json.dumps(value, ensure_ascii=False, separators=(",", ":"))
         else:
@@ -157,6 +177,8 @@ def _convert_legacy(values: Mapping[str, str | None], path: Path, known_keys: se
         native = _legacy_native_value(key, value, path)
         if isinstance(native, bool):
             converted[key] = "true" if native else "false"
+        elif key in _INT_KEYS:
+            converted[key] = str(native)
         elif isinstance(native, (list, dict)):
             converted[key] = json.dumps(native, ensure_ascii=False, separators=(",", ":"))
         else:

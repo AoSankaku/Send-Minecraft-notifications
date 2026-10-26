@@ -1,5 +1,6 @@
 import random
 import logging
+import time
 import structlog
 from structlog.stdlib import BoundLogger
 from watchfiles import awatch
@@ -7,6 +8,7 @@ from os import path
 import asyncio
 import json
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from message.parser import LogParser, combine_chat_records
 from message.chat_japanese import JapaneseChatFormatter
@@ -19,6 +21,7 @@ from message.i18n import I18n
 from utils.logutil import LogUtil
 from handlers.secrets import BotEnv
 from server.state import ServerState
+from server.crash import CrashReporter, is_server_start_record
 from server.script_state import ScriptState
 from utils.runtime import default_config_path
 
@@ -37,6 +40,9 @@ class Server:
         self.send_count: int = 0
         self.tips_messages: list[str] = []
         self.webhook: DiscordWebhook | None = None
+        self.admin_webhook: DiscordWebhook | None = None
+        self.crash_reporter: CrashReporter | None = None
+        self.latest_log_path: Path | None = None
         self.parser: LogParser
         self.i18n: I18n
         self.advancement_translator: AdvancementTranslator | None = None
@@ -74,6 +80,19 @@ class Server:
             BotEnv.SenderIcon.get(),
             server_icon_player=BotEnv.SenderIconPlayer.get(),
         )
+        webhooks_by_url = {BotEnv.WebhookUrl.get(): self.webhook}
+        admin_url = BotEnv.AdminWebhookUrl.get()
+        if admin_url:
+            self.admin_webhook = webhooks_by_url.get(admin_url)
+            if self.admin_webhook is None:
+                self.admin_webhook = DiscordWebhook(
+                    admin_url,
+                    BotEnv.PlayerIconApi.get(),
+                    BotEnv.SenderName.get(),
+                    BotEnv.SenderIcon.get(),
+                    server_icon_player=BotEnv.SenderIconPlayer.get(),
+                )
+                webhooks_by_url[admin_url] = self.admin_webhook
         self.logger.info("Webhook initialized.")
         
         self.parser = LogParser(
@@ -90,8 +109,35 @@ class Server:
         self.logger.info("LogParser initialized.")
         
         Path(BotEnv.TargetDir.get()).mkdir(parents=True, exist_ok=True)
-        logfile_path = path.join(BotEnv.TargetDir.get(), BotEnv.TargetFile.get())
-        self.logutil.load_to_prev(logfile_path)
+        logfile_path = Path(BotEnv.TargetDir.get()) / BotEnv.TargetFile.get()
+        self.latest_log_path = logfile_path
+        self.logutil.load_to_prev(str(logfile_path))
+        crash_reports_dir = BotEnv.CrashReportsDir.get().strip()
+        if crash_reports_dir:
+            configured_crash_dir = Path(crash_reports_dir)
+            if not configured_crash_dir.is_absolute():
+                configured_crash_dir = Path(config_path).absolute().parent / configured_crash_dir
+        else:
+            configured_crash_dir = Path(BotEnv.TargetDir.get()).parent / "crash-reports"
+        webhook_secrets = []
+        for configured_url in (BotEnv.WebhookUrl.get(), admin_url):
+            if configured_url:
+                webhook_secrets.append(configured_url)
+                webhook_secrets.append(urlsplit(configured_url).path.rstrip("/").rsplit("/", 1)[-1])
+        self.crash_reporter = CrashReporter(
+            crash_reports_dir=configured_crash_dir,
+            latest_log_path=logfile_path,
+            enabled=BotEnv.CrashDetectionEnabled.getBool(),
+            upload_enabled=BotEnv.CrashReportUploadEnabled.getBool(),
+            server_pid=int(BotEnv.ServerPid.get()),
+            alert_targets=json.loads(BotEnv.CrashAlertTargets.get()),
+            report_targets=json.loads(BotEnv.CrashReportTargets.get()),
+            crash_message=BotEnv.CrashMessage.get(),
+            translate=lambda event: self.i18n.translate(EventIds(event)),
+            send_message=self._send_crash_notification,
+            secrets=tuple(webhook_secrets),
+            home_paths=(str(Path.home()),),
+        )
         self.logger.info("Logfile loaded.")
         
         self.logger.info("Initialization completed!")
@@ -100,32 +146,98 @@ class Server:
     async def shutdown(self):
         if self.script_state != ScriptState.CRASHED:
             self.logger.info("Gracefully shutting down...")
-        if self.webhook:
-            await self.webhook.onClose()
+        if self.crash_reporter:
+            await self.crash_reporter.close()
+        webhooks = []
+        for webhook in (self.webhook, self.admin_webhook):
+            if webhook is not None and all(webhook is not existing for existing in webhooks):
+                webhooks.append(webhook)
+        if webhooks:
+            await asyncio.gather(
+                *(webhook.onClose() for webhook in webhooks),
+                return_exceptions=True,
+            )
         self.logger.info("See you!")
+
+    async def _send_crash_notification(self, message: str, targets):
+        destinations = {
+            "main": self.webhook,
+            "admin": self.admin_webhook,
+        }
+        selected = []
+        seen = set()
+        for target in targets:
+            webhook = destinations.get(target)
+            if webhook is None or id(webhook) in seen:
+                continue
+            seen.add(id(webhook))
+            selected.append((target, webhook))
+
+        async def send(target, webhook):
+            try:
+                await asyncio.wait_for(webhook.sendServerMessage(message), timeout=10)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                # Do not log webhook URLs, payloads, or remote error details.
+                self.logger.warning("Crash notification delivery failed", destination=target)
+
+        await asyncio.gather(*(send(target, webhook) for target, webhook in selected))
+
+    async def poll_crashes(self, *, now: float | None = None) -> int:
+        if self.crash_reporter is None:
+            return 0
+        count = await self.crash_reporter.poll(now=now)
+        if self.crash_reporter.has_crashed:
+            self.state = ServerState.CRASHED
+        await self.crash_reporter.drain_alerts()
+        return count
 
     async def crash(self):
         self.script_state = ScriptState.CRASHED
     
     async def listen_file_change(self):
         try:
-            async for changes in awatch(BotEnv.TargetDir.get(), recursive=True):
+            async for changes in awatch(
+                BotEnv.TargetDir.get(), recursive=True,
+                yield_on_timeout=True, rust_timeout=1000,
+            ):
+                now = time.monotonic()
                 for change in changes:
                     filepath = change[1]
-                    filename = path.basename(filepath)
-                    if filename == BotEnv.TargetFile.get():
-                        for line in combine_chat_records(self.logutil.get_log_diff(filepath)):
-                            await self.on_line_added(line)
+                    try:
+                        matches_latest = (
+                            self.latest_log_path is not None
+                            and Path(filepath).resolve() == self.latest_log_path.resolve()
+                        )
+                    except OSError:
+                        matches_latest = False
+                    if matches_latest:
+                        try:
+                            new_lines = self.logutil.get_log_diff(filepath)
+                        except OSError:
+                            continue
+                        for line in combine_chat_records(new_lines):
+                            await self.on_line_added(line, now=now)
+                await self.poll_crashes(now=now)
         except asyncio.exceptions.CancelledError:
             pass
     
-    async def on_line_added(self, line: str):
+    async def on_line_added(self, line: str, *, now: float | None = None):
+        if self.crash_reporter is not None:
+            if is_server_start_record(line):
+                self.crash_reporter.on_server_start(now=now)
+                if self.state == ServerState.CRASHED:
+                    self.state = ServerState.STARTING
+            if self.crash_reporter.observe_line(line, now=now):
+                self.state = ServerState.CRASHED
+            await self.crash_reporter.drain_alerts()
         result = self.parser.parse(line, self.i18n)
         if result == None:
             self.logger.debug("Ignore line", line=line)
             return
 
-        if not self.on_event(result.event_id):
+        if not self.on_event(result.event_id, now=now):
             return
 
         if result.player_count is not None:
@@ -167,9 +279,14 @@ class Server:
         if self.player_count < 0:
             self.player_count = 0
     
-    def on_event(self, event_id: str) -> bool:
+    def on_event(self, event_id: str, *, now: float | None = None) -> bool:
         # Returns False if the event should be suppressed
         if event_id == EventIds.ON_SERVER_STOP:
+            if self.crash_reporter is not None:
+                self.crash_reporter.on_clean_stop()
+            if self.state == ServerState.CRASHED:
+                self.logger.debug("Suppressed normal server stop after a crash")
+                return False
             if self.state == ServerState.RESTARTING:
                 self.logger.debug("Suppressed server stop message due to server restart")
                 return False
@@ -190,6 +307,8 @@ class Server:
             case EventIds.ON_SERVER_START:
                 self.player_count = 0
                 self.state = ServerState.STARTED
+                if self.crash_reporter is not None:
+                    self.crash_reporter.on_server_start(now=now)
             case EventIds.ON_SERVER_RESTART:
                 self.state = ServerState.RESTARTING
         
