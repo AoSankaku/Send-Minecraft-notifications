@@ -117,6 +117,8 @@ TARGET_FILE = "latest.log"
 
 サーバーの致命的なログと、新しく生成されたサーバー用クラッシュレポートを検知し、異常終了を通知します。検知は既定で有効です。クラッシュに続く停止ログで正常終了の通知を重ねず、同じ障害の複数の手掛かりをまとめます。通常のERRORログ、プレイヤーチャット、クライアント用の `*-client.txt`、通知プログラム起動前からあるレポートは対象にしません。
 
+Fabric・Forge・NeoForgeの `Failed to start ... server` と、Forge・NeoForgeのサーバー用MOD読み込み失敗レポートにも対応します。起動完了前に失敗しても、次のローダー起動で重複抑制をリセットし、再度の起動失敗を通知します。新旧のローダー起動形式と色コード付きログを扱います。通知プログラムはサーバー起動前から動かしてください。監視開始時に既に存在するログは通知し直しません。[検証内容と対応形式](docs/testing/server-startup-failures.tdd.md)
+
 クラッシュレポートを [mclo.gs](https://mclo.gs/) に自動アップロードし、リンクを通常チャンネルと管理者チャンネルの両方へ送る例です。管理者チャンネル側で作成したWebhookを `ADMIN_WEBHOOK_URL` に設定してください。
 
 ```toml
@@ -459,6 +461,8 @@ Malformed JARs/resources produce warnings while valid siblings continue. Nested 
 ### Server crash detection and report sharing
 
 Crash detection is enabled by default. It watches definitive server crash records and newly generated server crash reports, coalesces signals for the same incident, and avoids a misleading normal-stop notification after a crash. Generic errors, player chat, client-only `*-client.txt` reports and reports that predate notifier startup are excluded.
+
+Detection includes Fabric, Forge and NeoForge `Failed to start ... server` records and Forge/NeoForge server mod-loading failure reports. A new loader boot resets incident deduplication even if the previous attempt failed before server readiness, allowing another startup failure to be reported. Older and newer loader boot formats and color codes are handled. Start the notifier before starting the server; existing log contents are not replayed when monitoring begins. See [verified formats and test evidence](docs/testing/server-startup-failures.tdd.md).
 
 To enable automatic uploads to [mclo.gs](https://mclo.gs/) and send notifications and report links to both channels:
 
