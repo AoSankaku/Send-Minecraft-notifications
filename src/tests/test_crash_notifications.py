@@ -11,6 +11,7 @@ from message.constant import EventIds
 from message.i18n import I18n
 from message.locales import SUPPORTED_LOCALES
 from server.server import Server
+from server.state import ServerState
 
 
 WEBHOOK = "https://discord.com/api/webhooks/123456789012345678/" + "main-token-" * 6
@@ -157,6 +158,59 @@ def test_supported_server_crash_records_trigger_alert(tmp_path, monkeypatch, rec
         try:
             await server.on_line_added(record)
             assert crash_message_count(webhooks[WEBHOOK]) == 1
+        finally:
+            await server.shutdown()
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize("locale", ["ja", "en"])
+def test_reported_forge_startup_failure_replays_once_per_boot(tmp_path, monkeypatch, locale):
+    server, webhooks = make_server(tmp_path, monkeypatch, locale=locale)
+    records = (Path(__file__).parent / "fixtures" / "forge-startup-failure.txt").read_text(
+        encoding="utf-8"
+    ).splitlines(keepends=True)
+    log_path = tmp_path / "server-logs" / "latest.log"
+
+    async def exercise():
+        try:
+            for attempt in range(2):
+                log_path.write_text("", encoding="utf-8")
+                assert server.logutil.get_log_diff(str(log_path)) == []
+                for index, record in enumerate(records):
+                    with log_path.open("a", encoding="utf-8") as log:
+                        log.write(record)
+                    for line in server.logutil.get_log_diff(str(log_path)):
+                        await server.on_line_added(line)
+                    if index == 5:  # The server-only report marker precedes Minecraft's error.
+                        assert crash_message_count(webhooks[WEBHOOK]) == attempt + 1
+                assert server.state == ServerState.CRASHED
+                assert crash_message_count(webhooks[WEBHOOK]) == attempt + 1
+                assert server.logutil.get_log_diff(str(log_path)) == []
+        finally:
+            await server.shutdown()
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize("boot", [
+    "[12:34:56] [main/INFO]: Loading Minecraft 1.16.5 with Fabric Loader 0.14.25",
+    "[12:34:56] [main/INFO] [cpw.mods.modlauncher.Launcher/MODLAUNCHER]: ModLauncher running: args [--launchTarget, neoforgeserver]",
+    "[12:34:56] [main/INFO] [LaunchWrapper]: Loading tweak class name net.minecraftforge.fml.common.launcher.FMLServerTweaker",
+])
+def test_failure_before_server_thread_is_notified_again_after_loader_restart(
+    tmp_path, monkeypatch, boot
+):
+    server, webhooks = make_server(tmp_path, monkeypatch)
+
+    async def exercise():
+        try:
+            fatal = "[12:34:57] [main/ERROR]: Failed to start the minecraft server"
+            for attempt in range(2):
+                await server.on_line_added(boot)
+                await server.on_line_added(fatal)
+                await server.on_line_added(fatal)
+                assert crash_message_count(webhooks[WEBHOOK]) == attempt + 1
         finally:
             await server.shutdown()
 

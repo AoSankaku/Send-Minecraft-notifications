@@ -1,0 +1,9 @@
+[0511月2026 07:16:32.761] [main/INFO] [cpw.mods.modlauncher.Launcher/MODLAUNCHER]: ModLauncher running: args [--launchTarget, forgeserver, --fml.forgeVersion, 47.4.10, --fml.mcVersion, 1.20.1, --fml.forgeGroup, net.minecraftforge, --fml.mcpVersion, 20230612.114412]
+[0511月2026 07:17:13.252] [modloading-worker-0/ERROR] [net.minecraftforge.fml.javafmlmod.FMLModContainer/]: Exception caught during firing event: null
+java.lang.ExceptionInInitializerError
+[0511月2026 07:17:13.597] [main/FATAL] [net.minecraftforge.fml.ModLoader/LOADING]: Failed to complete lifecycle event COMMON_SETUP, 1 errors found
+[0511月2026 07:17:13.826] [main/FATAL] [net.minecraftforge.common.ForgeMod/]: Preparing crash report with UUID 00000000-0000-0000-0000-000000000000
+[0511月2026 07:17:13.826] [main/FATAL] [net.minecraftforge.server.loading.ServerModLoader/]: Crash report saved to ./crash-reports/crash-example-fml.txt
+[0511月2026 07:17:13.834] [main/FATAL] [net.minecraftforge.common.ForgeMod/]: Preparing crash report with UUID 00000000-0000-0000-0000-000000000001
+[0511月2026 07:17:13.836] [main/ERROR] [net.minecraft.server.Main/FATAL]: Failed to start the minecraft server
+net.minecraftforge.fml.LoadingFailedException: Loading errors encountered
