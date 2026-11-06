@@ -198,6 +198,7 @@ def test_reported_forge_startup_failure_replays_once_per_boot(tmp_path, monkeypa
     "[12:34:56] [main/INFO]: Loading Minecraft 1.16.5 with Fabric Loader 0.14.25",
     "[12:34:56] [main/INFO] [cpw.mods.modlauncher.Launcher/MODLAUNCHER]: ModLauncher running: args [--launchTarget, neoforgeserver]",
     "[12:34:56] [main/INFO] [LaunchWrapper]: Loading tweak class name net.minecraftforge.fml.common.launcher.FMLServerTweaker",
+    "[12:34:56] [main/INFO] [net.neoforged.fml.startup.Entrypoint/]: JVM Uptime at startup: 123ms",
 ])
 def test_failure_before_server_thread_is_notified_again_after_loader_restart(
     tmp_path, monkeypatch, boot

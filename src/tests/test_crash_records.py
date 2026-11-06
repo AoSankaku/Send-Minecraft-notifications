@@ -39,6 +39,8 @@ def test_server_failure_records(record):
 
 @pytest.mark.parametrize("record", [
     "[12:34:56] [main/ERROR]: Failed to start the metrics exporter",
+    "[12:34:56] [main/ERROR] [examplemod/]: Failed to start the server status listener",
+    "[12:34:56] [main/ERROR] [examplemod/]: Failed to start server metrics exporter",
     "[12:34:56] [main/INFO]: Failed to start the server",
     "[12:34:56] [Render thread/FATAL]: Failed to start the minecraft server",
     "[12:34:56] [Server thread/ERROR] [examplemod/]: <Alice> Failed to start the minecraft server",
@@ -64,6 +66,7 @@ def test_non_server_failures_and_quoted_markers_are_ignored(record):
     "[12:34:56] [main/INFO] [cpw.mods.modlauncher.Launcher/MODLAUNCHER]: ModLauncher running: args [--launchTarget, fmlserver, --fml.mcVersion, 1.16.5]",
     "[12:34:56] [main/INFO] [LaunchWrapper]: Loading tweak class name net.minecraftforge.fml.common.launcher.FMLServerTweaker",
     "[12:34:56] [main/INFO] [LaunchWrapper]: Loading tweak class name cpw.mods.fml.common.launcher.FMLServerTweaker",
+    "[12:34:56] [main/INFO] [net.neoforged.fml.startup.Entrypoint/]: JVM Uptime at startup: 123ms",
     "\x1b[32m[12:34:56] [Server thread/INFO]: Starting minecraft server version 1.21.1\x1b[0m",
 ])
 def test_loader_boot_records_reset_failed_start_attempts(record):
@@ -77,6 +80,8 @@ def test_loader_boot_records_reset_failed_start_attempts(record):
     "[12:34:56] [main/INFO] [examplemod/]: ModLauncher running: args [--launchTarget, forgeserver]",
     "[12:34:56] [main/INFO] [examplemod/]: Loading Minecraft 1.21.1 with Fabric Loader 0.16.0",
     "[12:34:56] [main/ERROR]: Loading Minecraft 1.21.1 with Fabric Loader 0.16.0",
+    "[12:34:56] [main/INFO] [examplemod/]: JVM Uptime at startup: 123ms",
+    "[12:34:56] [Server thread/INFO] [net.neoforged.fml.startup.Entrypoint/]: JVM Uptime at startup: 123ms",
 ])
 def test_chat_client_and_untrusted_boot_messages_do_not_reset_incidents(record):
     assert not is_server_start_record(record)
