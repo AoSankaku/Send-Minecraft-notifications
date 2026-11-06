@@ -12,6 +12,8 @@ from server.crash import is_server_crash_record, is_server_start_record
     ),
     pytest.param("[12:34:56] [main/FATAL]: Failed to start the minecraft server", id="fabric-1.16"),
     pytest.param("[12:34:56] [main/ERROR]: Failed to start the server", id="short-start-failure"),
+    pytest.param("[12:34:56] [main/ERROR]: Failed to start the server: java.lang.IllegalStateException", id="start-failure-with-cause"),
+    pytest.param("[12:34:56] [main/ERROR]: Failed to start Minecraft server.", id="start-failure-with-period"),
     pytest.param("[12:34:56] [Server thread/ERROR]: Failed to start Minecraft server", id="server-thread-start-failure"),
     pytest.param("[12:34:56] [main/ERROR] [minecraft/Main]: Failed to start minecraft server", id="short-logger"),
     pytest.param("[12:34:56] [Server thread/ERROR] [minecraft/MinecraftServer]: Encountered an unexpected exception", id="forge-1.12"),
@@ -67,6 +69,7 @@ def test_non_server_failures_and_quoted_markers_are_ignored(record):
     "[12:34:56] [main/INFO] [LaunchWrapper]: Loading tweak class name net.minecraftforge.fml.common.launcher.FMLServerTweaker",
     "[12:34:56] [main/INFO] [LaunchWrapper]: Loading tweak class name cpw.mods.fml.common.launcher.FMLServerTweaker",
     "[12:34:56] [main/INFO] [net.neoforged.fml.startup.Entrypoint/]: JVM Uptime at startup: 123ms",
+    "[12:34:56] [main/INFO] [ne.ne.fm.st.Entrypoint/]: JVM Uptime at startup: 123ms",
     "\x1b[32m[12:34:56] [Server thread/INFO]: Starting minecraft server version 1.21.1\x1b[0m",
 ])
 def test_loader_boot_records_reset_failed_start_attempts(record):

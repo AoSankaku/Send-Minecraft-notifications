@@ -41,7 +41,8 @@ _SERVER_CRASH_MARKERS = (
     "a fatal error has been detected by the java runtime environment",
 )
 _SERVER_START_FAILURE = re.compile(
-    r"^(?:failed to start (?:(?:the )?minecraft |the )?server|server startup failed)\b",
+    r"^(?:failed to start (?:(?:the )?minecraft |the )?server|server startup failed)"
+    r"(?:[.!]?[ \t]*$|:)",
     re.IGNORECASE,
 )
 _DEDICATED_SERVER_LOGGER = re.compile(
@@ -66,6 +67,10 @@ _SERVER_LAUNCH_TARGET = re.compile(
 _LEGACY_SERVER_TWEAKER = re.compile(
     r"^Loading tweak class name (?:net\.minecraftforge\.fml|cpw\.mods\.fml)"
     r"\.common\.launcher\.FMLServerTweaker$"
+)
+_FML_ENTRYPOINT_LOGGER = re.compile(
+    r"^(?:net\.neoforged\.fml\.startup|ne\.ne\.fm\.st)\.Entrypoint(?:/[^\r\n]*)?$",
+    re.IGNORECASE,
 )
 _REPORT_NAME = re.compile(r"^crash-.+-(?P<kind>server|fml)\.txt$", re.IGNORECASE)
 _REPORT_HEADER = "---- minecraft crash report ----"
@@ -131,6 +136,8 @@ def is_server_start_record(line: str) -> bool:
     # deduplication; it does not establish evidence of a server crash.
     if (not logger or _FABRIC_LOGGER.fullmatch(logger)) and _FABRIC_BOOT.match(body):
         return True
+    if _FML_ENTRYPOINT_LOGGER.fullmatch(logger):
+        return re.fullmatch(r"JVM Uptime at startup: \d+ms", body) is not None
     if _MOD_LAUNCHER_LOGGER.fullmatch(logger):
         return body.startswith("ModLauncher running: args [") and bool(
             _SERVER_LAUNCH_TARGET.search(body)
