@@ -167,6 +167,7 @@ def test_supported_server_crash_records_trigger_alert(tmp_path, monkeypatch, rec
 @pytest.mark.parametrize("locale", ["ja", "en"])
 def test_reported_forge_startup_failure_replays_once_per_boot(tmp_path, monkeypatch, locale):
     server, webhooks = make_server(tmp_path, monkeypatch, locale=locale)
+    alert = server.i18n.translate(EventIds.ON_SERVER_CRASH)
     records = (Path(__file__).parent / "fixtures" / "forge-startup-failure.txt").read_text(
         encoding="utf-8"
     ).splitlines(keepends=True)
@@ -183,9 +184,9 @@ def test_reported_forge_startup_failure_replays_once_per_boot(tmp_path, monkeypa
                     for line in server.logutil.get_log_diff(str(log_path)):
                         await server.on_line_added(line)
                     if index == 5:  # The server-only report marker precedes Minecraft's error.
-                        assert crash_message_count(webhooks[WEBHOOK]) == attempt + 1
+                        assert webhooks[WEBHOOK].system.count(alert) == attempt + 1
                 assert server.state == ServerState.CRASHED
-                assert crash_message_count(webhooks[WEBHOOK]) == attempt + 1
+                assert webhooks[WEBHOOK].system.count(alert) == attempt + 1
                 assert server.logutil.get_log_diff(str(log_path)) == []
         finally:
             await server.shutdown()

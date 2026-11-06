@@ -24,36 +24,48 @@ REPORT_READINESS_GRACE_SECONDS = 5.0
 MAX_TRACKED_REPORTS = 512
 MAX_PENDING_UPLOADS = 2
 
+_COLORS = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]|§[0-9a-fk-orx]", re.IGNORECASE)
 _HEADER = re.compile(
     r"^\[[^\]\r\n]+\]\s+\[(?P<thread>[^/\]\r\n]+)/"
-    r"(?P<level>ERROR|FATAL)\](?:\s+\[(?P<logger>[^\]\r\n]+)\])?:\s*"
+    r"(?P<level>INFO|ERROR|FATAL)\](?:\s+\[(?P<logger>[^\]\r\n]+)\])?:\s*"
     r"(?P<body>[\s\S]*)$",
-    re.IGNORECASE,
-)
-_START_HEADER = re.compile(
-    r"^\[[^\]\r\n]+\]\s+\[Server thread/INFO\]"
-    r"(?:\s+\[[^\]\r\n]+\])?:\s*"
-    r"Starting minecraft server version\b",
     re.IGNORECASE,
 )
 _SERVER_THREADS = {"server thread", "server watchdog", "main"}
 _SERVER_CRASH_MARKERS = (
     "encountered an unexpected exception",
     "exception caught during server tick",
-    "failed to start the minecraft server",
     "considering it to be crashed, server will forcibly shutdown",
     "this crash report has been saved to:",
     "preparing crash report with uuid",
     "a fatal error has been detected by the java runtime environment",
 )
-_MAIN_THREAD_SERVER_CRASH_MARKERS = (
-    "failed to start the minecraft server",
-    "failed to start minecraft server",
-    "server startup failed",
+_SERVER_START_FAILURE = re.compile(
+    r"^(?:failed to start (?:(?:the )?minecraft |the )?server|server startup failed)\b",
+    re.IGNORECASE,
 )
 _DEDICATED_SERVER_LOGGER = re.compile(
     r"(?:dedicatedserver|net\.minecraft\.server(?:[./]|$)|serverlifecyclehooks)",
     re.IGNORECASE,
+)
+_SERVER_MOD_LOADER_LOGGER = re.compile(
+    r"^(?:(?:net\.minecraftforge|net\.neoforged\.neoforge)\.server\.loading\.ServerModLoader"
+    r"|(?:forge|neoforge)/ServerModLoader)(?:/[^\r\n]*)?$",
+    re.IGNORECASE,
+)
+_SERVER_MOD_LOADER_FAILURES = ("crash report saved to", "failed to save crash report")
+_FABRIC_BOOT = re.compile(r"^Loading Minecraft \S+ with Fabric Loader \S+(?:\s|$)")
+_FABRIC_LOGGER = re.compile(r"^FabricLoader(?:/[^\r\n]*)?$", re.IGNORECASE)
+_MOD_LAUNCHER_LOGGER = re.compile(
+    r"^(?:cpw\.mods\.modlauncher\.Launcher|modlauncher/Launcher)(?:/[^\r\n]*)?$",
+    re.IGNORECASE,
+)
+_SERVER_LAUNCH_TARGET = re.compile(
+    r"(?:^|[\[,\s])--launchTarget(?:,\s*|=|\s+)(?:forge|neoforge|fml)server(?=[,\s\]])"
+)
+_LEGACY_SERVER_TWEAKER = re.compile(
+    r"^Loading tweak class name (?:net\.minecraftforge\.fml|cpw\.mods\.fml)"
+    r"\.common\.launcher\.FMLServerTweaker$"
 )
 _REPORT_NAME = re.compile(r"^crash-.+-(?P<kind>server|fml)\.txt$", re.IGNORECASE)
 _REPORT_HEADER = "---- minecraft crash report ----"
@@ -67,29 +79,65 @@ _FML_CLIENT_EVIDENCE = re.compile(
 )
 
 
+def _record(line: str) -> re.Match[str] | None:
+    return _HEADER.fullmatch(_COLORS.sub("", line).strip("\r\n\ufeff"))
+
+
+def _starts_with_marker(body: str, markers: Iterable[str]) -> bool:
+    return any(
+        body.startswith(marker)
+        and (len(body) == len(marker) or not body[len(marker)].isalnum())
+        for marker in markers
+    )
+
+
 def is_server_crash_record(line: str) -> bool:
     """Return true only for a specific fatal record on a server-side thread."""
-    match = _HEADER.fullmatch(line.strip("\r\n\x1b"))
-    if match is None:
+    match = _record(line)
+    if match is None or match["level"].casefold() not in {"error", "fatal"}:
         return False
     body = match["body"].casefold()
     thread = match["thread"].strip().casefold()
-    if thread == "main":
-        explicit_start_failure = any(marker in body for marker in _MAIN_THREAD_SERVER_CRASH_MARKERS)
-        dedicated_logger = bool(
-            match["logger"] and _DEDICATED_SERVER_LOGGER.search(match["logger"])
-        )
-        return explicit_start_failure or (
-            dedicated_logger and any(marker in body for marker in _SERVER_CRASH_MARKERS)
-        )
     if thread not in _SERVER_THREADS:
         return False
-    return any(marker in body for marker in _SERVER_CRASH_MARKERS)
+    if _SERVER_START_FAILURE.match(body):
+        return True
+    if thread == "main":
+        logger = match["logger"] or ""
+        if _SERVER_MOD_LOADER_LOGGER.fullmatch(logger):
+            return _starts_with_marker(body, _SERVER_MOD_LOADER_FAILURES)
+        dedicated_logger = bool(
+            logger and _DEDICATED_SERVER_LOGGER.search(logger)
+        )
+        return (
+            dedicated_logger and _starts_with_marker(body, _SERVER_CRASH_MARKERS)
+        )
+    return _starts_with_marker(body, _SERVER_CRASH_MARKERS)
 
 
 def is_server_start_record(line: str) -> bool:
-    """Recognize the structured server-thread boot record before readiness."""
-    return _START_HEADER.match(line.strip("\r\n\x1b")) is not None
+    """Recognize a new loader/server boot, including failures before readiness."""
+    match = _record(line)
+    if match is None or match["level"].casefold() != "info":
+        return False
+    body = match["body"]
+    thread = match["thread"].strip().casefold()
+    if thread == "server thread":
+        return bool(re.match(r"^Starting minecraft server version\b", body, re.IGNORECASE))
+    if thread != "main":
+        return False
+    logger = match["logger"] or ""
+    # Fabric's boot record is shared with clients. It only resets incident
+    # deduplication; it does not establish evidence of a server crash.
+    if (not logger or _FABRIC_LOGGER.fullmatch(logger)) and _FABRIC_BOOT.match(body):
+        return True
+    if _MOD_LAUNCHER_LOGGER.fullmatch(logger):
+        return body.startswith("ModLauncher running: args [") and bool(
+            _SERVER_LAUNCH_TARGET.search(body)
+        )
+    if logger.casefold() in {"launchwrapper", "net.minecraft.launchwrapper.launch"}:
+        return _LEGACY_SERVER_TWEAKER.fullmatch(body) is not None
+    return False
 
 
 def _path_signature(file_stat: os.stat_result) -> tuple[int, int, int, int]:
