@@ -14,20 +14,20 @@ Minecraft サーバーのログを監視し、起動・終了、プレイヤー�
 今後のWindows版リリース実行ファイル名は、アプリ名・リリースタグ・対象OSが分かる `send-minecraft-notifications-<tag>-windows-x64.exe` 形式です（タグ内の `/` は `-` に置き換えます）。公開済みの beta0/beta1 のファイル名は変わりません。
 
 <!-- smn:install-ja:start -->
-対象リリース: [v1.0.0-beta2](https://github.com/AoSankaku/Send-Minecraft-notifications/releases/tag/v1.0.0-beta2)。Python のインストールや ZIP の展開は不要です。設定を書き込めるフォルダーで実行してください。
+対象リリース: [v1.0.0-beta3](https://github.com/AoSankaku/Send-Minecraft-notifications/releases/tag/v1.0.0-beta3)。Python のインストールや ZIP の展開は不要です。設定を書き込めるフォルダーで実行してください。
 
 ### Ubuntu Server / Linux x64 でのダウンロードと起動
 
 ```sh
 curl -fL -o send-minecraft-notifications-linux-x64 \
-  https://github.com/AoSankaku/Send-Minecraft-notifications/releases/download/v1.0.0-beta2/send-minecraft-notifications-linux-x64
+  https://github.com/AoSankaku/Send-Minecraft-notifications/releases/download/v1.0.0-beta3/send-minecraft-notifications-linux-x64
 ```
 
 任意で、実行前に同じリリースのチェックサムで検証します。未取得の ZIP は検査対象から外れます。
 
 ```sh
 curl -fL -o SHA256SUMS-linux-x64.txt \
-  https://github.com/AoSankaku/Send-Minecraft-notifications/releases/download/v1.0.0-beta2/SHA256SUMS-linux-x64.txt
+  https://github.com/AoSankaku/Send-Minecraft-notifications/releases/download/v1.0.0-beta3/SHA256SUMS-linux-x64.txt
 sha256sum --check --ignore-missing SHA256SUMS-linux-x64.txt
 ```
 
@@ -48,16 +48,16 @@ chmod +x ./send-minecraft-notifications-linux-x64
 ### Windows x64 / PowerShell でのダウンロードと起動
 
 ```powershell
-curl.exe -fL -o send-minecraft-notifications-v1.0.0-beta2-windows-x64.exe `
-  https://github.com/AoSankaku/Send-Minecraft-notifications/releases/download/v1.0.0-beta2/send-minecraft-notifications-v1.0.0-beta2-windows-x64.exe
-.\send-minecraft-notifications-v1.0.0-beta2-windows-x64.exe
+curl.exe -fL -o send-minecraft-notifications-v1.0.0-beta3-windows-x64.exe `
+  https://github.com/AoSankaku/Send-Minecraft-notifications/releases/download/v1.0.0-beta3/send-minecraft-notifications-v1.0.0-beta3-windows-x64.exe
+.\send-minecraft-notifications-v1.0.0-beta3-windows-x64.exe
 ```
 
 初回起動で作られた `send-minecraft-notifications.toml` をエディターで開き、`WEBHOOK_URL` と `TARGET_DIR` を設定してから、次を実行します。
 
 ```powershell
-.\send-minecraft-notifications-v1.0.0-beta2-windows-x64.exe --check-config
-.\send-minecraft-notifications-v1.0.0-beta2-windows-x64.exe
+.\send-minecraft-notifications-v1.0.0-beta3-windows-x64.exe --check-config
+.\send-minecraft-notifications-v1.0.0-beta3-windows-x64.exe
 ```
 
 `-L` は GitHub の転送先を追い、`-o` はファイルに保存し、`-f` は HTTP エラー時に失敗させます。既存の `send-minecraft-notifications.toml` は上書きされません。設定検査では Discord へ送信しません。
@@ -72,8 +72,8 @@ curl.exe -fL -o send-minecraft-notifications-v1.0.0-beta2-windows-x64.exe `
 ```
 
 ```powershell
-.\send-minecraft-notifications-v1.0.0-beta2-windows-x64.exe --config 'C:\path\to\Send-Minecraft-notifications' --check-config
-.\send-minecraft-notifications-v1.0.0-beta2-windows-x64.exe --config 'C:\path\to\Send-Minecraft-notifications\.env'
+.\send-minecraft-notifications-v1.0.0-beta3-windows-x64.exe --config 'C:\path\to\Send-Minecraft-notifications' --check-config
+.\send-minecraft-notifications-v1.0.0-beta3-windows-x64.exe --config 'C:\path\to\Send-Minecraft-notifications\.env'
 ```
 <!-- smn:install-ja:end -->
 
@@ -332,20 +332,20 @@ uv run python scripts/build_release.py --version v1.2.3
 Download the Windows x64 `.exe` or Linux x64 binary from [Releases](https://github.com/AoSankaku/Send-Minecraft-notifications/releases). The standalone binary does not require Python, and you can run it without extracting a ZIP. Builds after the published `v1.0.0-beta1` create `send-minecraft-notifications.toml` beside the executable on first run. Set `WEBHOOK_URL` and `TARGET_DIR`, then run it again. Relative paths are resolved from the configuration file's folder. On Linux, run `chmod +x <binary>` first. The Linux build requires glibc 2.35 or newer. Other operating systems and architectures are not currently supported release targets.
 
 <!-- smn:install-en:start -->
-Release: [v1.0.0-beta2](https://github.com/AoSankaku/Send-Minecraft-notifications/releases/tag/v1.0.0-beta2). No Python installation or ZIP extraction is required. Run these commands in a writable directory.
+Release: [v1.0.0-beta3](https://github.com/AoSankaku/Send-Minecraft-notifications/releases/tag/v1.0.0-beta3). No Python installation or ZIP extraction is required. Run these commands in a writable directory.
 
 ### Ubuntu Server / Linux x64 download and startup
 
 ```sh
 curl -fL -o send-minecraft-notifications-linux-x64 \
-  https://github.com/AoSankaku/Send-Minecraft-notifications/releases/download/v1.0.0-beta2/send-minecraft-notifications-linux-x64
+  https://github.com/AoSankaku/Send-Minecraft-notifications/releases/download/v1.0.0-beta3/send-minecraft-notifications-linux-x64
 ```
 
 Optionally verify the checksum before execution. The ZIP is ignored if it was not downloaded.
 
 ```sh
 curl -fL -o SHA256SUMS-linux-x64.txt \
-  https://github.com/AoSankaku/Send-Minecraft-notifications/releases/download/v1.0.0-beta2/SHA256SUMS-linux-x64.txt
+  https://github.com/AoSankaku/Send-Minecraft-notifications/releases/download/v1.0.0-beta3/SHA256SUMS-linux-x64.txt
 sha256sum --check --ignore-missing SHA256SUMS-linux-x64.txt
 ```
 
@@ -366,16 +366,16 @@ Use an editor to set `WEBHOOK_URL` and `TARGET_DIR` (your Minecraft server's log
 ### Windows x64 / PowerShell download and startup
 
 ```powershell
-curl.exe -fL -o send-minecraft-notifications-v1.0.0-beta2-windows-x64.exe `
-  https://github.com/AoSankaku/Send-Minecraft-notifications/releases/download/v1.0.0-beta2/send-minecraft-notifications-v1.0.0-beta2-windows-x64.exe
-.\send-minecraft-notifications-v1.0.0-beta2-windows-x64.exe
+curl.exe -fL -o send-minecraft-notifications-v1.0.0-beta3-windows-x64.exe `
+  https://github.com/AoSankaku/Send-Minecraft-notifications/releases/download/v1.0.0-beta3/send-minecraft-notifications-v1.0.0-beta3-windows-x64.exe
+.\send-minecraft-notifications-v1.0.0-beta3-windows-x64.exe
 ```
 
 Open the generated `send-minecraft-notifications.toml` in an editor and set `WEBHOOK_URL` and `TARGET_DIR`, then run:
 
 ```powershell
-.\send-minecraft-notifications-v1.0.0-beta2-windows-x64.exe --check-config
-.\send-minecraft-notifications-v1.0.0-beta2-windows-x64.exe
+.\send-minecraft-notifications-v1.0.0-beta3-windows-x64.exe --check-config
+.\send-minecraft-notifications-v1.0.0-beta3-windows-x64.exe
 ```
 
 `-L` follows GitHub redirects, `-o` saves to a file, and `-f` fails on HTTP errors. Existing `send-minecraft-notifications.toml` files are preserved. Configuration checks do not send Discord notifications.
@@ -390,8 +390,8 @@ Pass the old Python installation directory or its `.env` file to `--config`. The
 ```
 
 ```powershell
-.\send-minecraft-notifications-v1.0.0-beta2-windows-x64.exe --config 'C:\path\to\Send-Minecraft-notifications' --check-config
-.\send-minecraft-notifications-v1.0.0-beta2-windows-x64.exe --config 'C:\path\to\Send-Minecraft-notifications\.env'
+.\send-minecraft-notifications-v1.0.0-beta3-windows-x64.exe --config 'C:\path\to\Send-Minecraft-notifications' --check-config
+.\send-minecraft-notifications-v1.0.0-beta3-windows-x64.exe --config 'C:\path\to\Send-Minecraft-notifications\.env'
 ```
 <!-- smn:install-en:end -->
 
