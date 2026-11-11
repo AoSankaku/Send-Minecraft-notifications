@@ -4,7 +4,7 @@ The user requested notifications when an OpenMapMC shared waypoint is created, a
 
 ## Source investigation and contract
 
-The local OpenMapMC Delta repository is `C:\Users\abcde\dev\minecraft\mods\odyssey-map-delta`. Its `SharedWaypointServer` CREATE path commits persistent state and returns success feedback, but the investigated baseline had no creation INFO log. This was checked across the maintained 1.20.1, 1.21.1, 26.1.2 and 26.2 roots; ordinary warning/error logs were insufficient to identify creation.
+The local OpenMapMC Delta repository is `~\dev\minecraft\mods\odyssey-map-delta`. Its `SharedWaypointServer` CREATE path commits persistent state and returns success feedback, but the investigated baseline had no creation INFO log. This was checked across the maintained 1.20.1, 1.21.1, 26.1.2 and 26.2 roots; ordinary warning/error logs were insufficient to identify creation.
 
 The authorized change was sent to its existing chat `設定画面にサーバー設定を追加` (`01a13ba3-cc27-7c80-9950-feb55cc334cd`), which owns that repository. The receiving chat confirmed the four source paths and began source-side tests/implementation. No OpenMapMC source files were edited by this notifier task.
 

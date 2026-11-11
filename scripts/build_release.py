@@ -19,7 +19,7 @@ PRODUCT = "send-minecraft-notifications"
 CONFIG_FILENAME = f"{PRODUCT}.toml"
 CONFIG_TEMPLATE = f"{PRODUCT}.example.toml"
 MAX_WINDOWS_FILENAME_LENGTH = 28
-LOCAL_WINDOWS_EXPORT_DIR = Path(r"C:\Users\abcde\dev\normal-apps\[output-executables]")
+LOCAL_WINDOWS_EXPORT_DIR = Path.home() / "dev" / "normal-apps" / "[output-executables]"
 
 
 def run_git(repo_root: Path, *args: str) -> str:

@@ -22,4 +22,4 @@ The already successful build artifacts were then downloaded and verified, attach
 
 GitHub reports the release as published and prerelease, with exactly six assets. GitHub's SHA-256 digest for every uploaded asset matches the locally verified CI artifact. The Windows executable downloaded from the published release also matches the CI output byte for byte. Release notes include the Japanese/English changes and generated installation commands.
 
-The self-contained Windows binary was exported as `smn-main-ae984f4.exe` to `C:\Users\abcde\dev\normal-apps\[output-executables]`, using the app, branch and source HEAD resolved before the build. The exported file's SHA-256 matches, and every direct child of that folder is an EXE or shortcut.
+The self-contained Windows binary was exported as `smn-main-ae984f4.exe` to `~\dev\normal-apps\[output-executables]`, using the app, branch and source HEAD resolved before the build. The exported file's SHA-256 matches, and every direct child of that folder is an EXE or shortcut.
